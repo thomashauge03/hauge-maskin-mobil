@@ -1,0 +1,23 @@
+node_modules/
+
+# Signeringsnøkkelen må ALDRI ut på GitHub. Utan han kan ingen andre lage
+# oppdateringar som telefonen godtek som same app.
+signering/
+
+# Byggjeresultat
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+ios/App/App/public/
+ios/App/Pods/
+ios/App/App/capacitor.config.json
+ios/App/App/capacitor.plugins.json
+DerivedData/
+*.apk
+*.aab
+*.ipa
+.DS_Store

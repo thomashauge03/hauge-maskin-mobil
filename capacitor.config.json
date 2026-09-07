@@ -1,0 +1,21 @@
+{
+  "appId": "no.haugemaskin.mobil",
+  "appName": "Hauge Maskin",
+  "webDir": "www",
+  "backgroundColor": "#0d0d0f",
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#0d0d0f"
+  },
+  "ios": {
+    "contentInset": "always",
+    "backgroundColor": "#0d0d0f"
+  },
+  "plugins": {
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#0d0d0f",
+      "overlaysWebView": false
+    }
+  }
+}

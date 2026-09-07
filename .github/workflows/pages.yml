@@ -1,0 +1,33 @@
+# Legg ut www/ som ei nettside på GitHub Pages. Det er denne adressa
+# iPhone-brukarane legg til på Hjem-skjermen.
+name: Legg ut nettversjonen
+
+on:
+  push:
+    branches: [main]
+    paths: ['www/**', '.github/workflows/pages.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  legg-ut:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.utlegg.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: www
+      - id: utlegg
+        uses: actions/deploy-pages@v4

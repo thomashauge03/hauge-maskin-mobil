@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#0d0d0f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Hauge Maskin" />
+  <link rel="apple-touch-icon" href="assets/icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <title>Hauge Maskin</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="topp">
+    <img class="logo" src="assets/logo-trim.png" alt="Hauge Maskin" />
+    <div class="tittel">
+      <strong>HAUGE</strong><span>MASKIN</span>
+    </div>
+    <button id="btnOppdater" class="ikonknapp" aria-label="Hent sidene på nytt">
+      <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 4v7h-7"/></svg>
+    </button>
+  </header>
+
+  <div class="sokefelt">
+    <svg class="sok-ikon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+    <input id="sok" type="search" placeholder="Søk etter side…" autocomplete="off" enterkeyhint="search" />
+  </div>
+
+  <main id="liste" class="liste"></main>
+
+  <div id="tomt" class="tomt" hidden>
+    <img src="assets/logo-trim.png" alt="" />
+    <p id="tomtTekst">Hentar sidene…</p>
+    <button id="btnProvIgjen" class="knapp" hidden>Prøv igjen</button>
+  </div>
+
+  <footer class="botn">
+    <span id="status"></span>
+    <button id="btnOm" class="tekstknapp">Om</button>
+  </footer>
+
+  <!-- Detaljar om ei side -->
+  <div id="ark" class="ark-bakgrunn" hidden>
+    <div class="ark">
+      <div class="ark-drag"></div>
+      <div class="ark-topp">
+        <div id="arkIkon" class="ark-ikon"></div>
+        <div class="ark-tekst">
+          <strong id="arkNamn"></strong>
+          <span id="arkGruppe"></span>
+        </div>
+      </div>
+      <p id="arkHjelp" class="ark-hjelp"></p>
+      <div class="ark-adresse" id="arkAdresse"></div>
+      <button id="arkOpne" class="knapp knapp-stor">Opne</button>
+      <button id="arkLukk" class="tekstknapp midtstilt">Lukk</button>
+    </div>
+  </div>
+
+  <!-- Om appen -->
+  <div id="om" class="ark-bakgrunn" hidden>
+    <div class="ark">
+      <div class="ark-drag"></div>
+      <h2>Hauge Maskin</h2>
+      <p class="ark-hjelp" id="omTekst"></p>
+      <div class="om-rad"><span>Versjon</span><b id="omVersjon">–</b></div>
+      <div class="om-rad"><span>Felles sider</span><b id="omSider">–</b></div>
+      <div class="om-rad"><span>Sist henta</span><b id="omSynk">–</b></div>
+      <button id="omLukk" class="knapp knapp-stor">Lukk</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

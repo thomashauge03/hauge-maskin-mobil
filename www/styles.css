@@ -1,0 +1,185 @@
+:root {
+  --raud: #e2001a;
+  --botn: #0d0d0f;
+  --botn-2: #131317;
+  --botn-3: #1a1a20;
+  --strek: #26262e;
+  --tekst: #f2f2f5;
+  --dempa: #8a8a97;
+  --trygg-topp: env(safe-area-inset-top, 0px);
+  --trygg-botn: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--botn);
+  color: var(--tekst);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  padding-top: var(--trygg-topp);
+}
+
+button { font-family: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
+svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- Topp ---------- */
+.topp {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px 12px;
+  background: linear-gradient(180deg, #121216, #0d0d0f);
+  border-bottom: 1px solid var(--strek);
+  position: sticky; top: var(--trygg-topp); z-index: 10;
+}
+.logo { height: 30px; width: auto; display: block; }
+.tittel { display: flex; flex-direction: column; line-height: 1.02; font-style: italic; flex: 1; }
+.tittel strong { font-size: 14px; font-weight: 900; letter-spacing: .05em; }
+.tittel span { font-size: 14px; font-weight: 900; letter-spacing: .05em; color: var(--raud); }
+.ikonknapp {
+  width: 40px; height: 40px; border-radius: 12px;
+  display: grid; place-items: center; color: var(--dempa);
+  background: #ffffff0a;
+}
+.ikonknapp:active { background: #ffffff1a; color: #fff; }
+.ikonknapp svg { width: 19px; height: 19px; }
+.ikonknapp.gaar svg { animation: snurr 1s linear infinite; }
+@keyframes snurr { to { transform: rotate(360deg); } }
+
+/* ---------- Søk ---------- */
+.sokefelt { position: relative; padding: 12px 16px 4px; }
+.sok-ikon {
+  position: absolute; left: 30px; top: 50%; transform: translateY(-30%);
+  width: 17px; height: 17px; color: var(--dempa); pointer-events: none;
+}
+#sok {
+  width: 100%; padding: 13px 14px 13px 40px;
+  background: var(--botn-3); border: 1px solid var(--strek); border-radius: 14px;
+  color: var(--tekst); font-size: 16px; outline: none;
+  -webkit-appearance: none;
+}
+#sok:focus { border-color: var(--raud); }
+#sok::placeholder { color: #62626e; }
+
+/* ---------- Lista ---------- */
+.liste { flex: 1; padding: 8px 12px 20px; }
+
+.gruppe {
+  font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
+  color: #5c5c68; padding: 18px 8px 8px;
+}
+
+.rad {
+  display: flex; align-items: center; gap: 14px; width: 100%;
+  padding: 14px 14px; margin-bottom: 8px;
+  background: var(--botn-2); border: 1px solid var(--strek); border-radius: 16px;
+  text-align: left; color: var(--tekst);
+  transition: transform .08s, background .12s;
+}
+.rad:active { transform: scale(.98); background: #1e1e25; }
+.rad-ikon {
+  width: 44px; height: 44px; flex: 0 0 auto; border-radius: 12px;
+  background: #ffffff0d; display: grid; place-items: center; overflow: hidden;
+}
+.rad-ikon img { max-width: 34px; max-height: 34px; object-fit: contain; }
+.rad-ikon .bokstav { font-size: 19px; font-weight: 900; font-style: italic; color: #fff; }
+.rad-tekst { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.rad-tekst strong {
+  font-size: 16px; font-weight: 600; line-height: 1.25;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rad-tekst span {
+  font-size: 12.5px; color: var(--dempa);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rad-pil { color: #4a4a55; flex: 0 0 auto; }
+.rad-pil svg { width: 18px; height: 18px; }
+
+/* ---------- Tomt / lastar ---------- */
+.tomt {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 14px; padding: 40px 30px; text-align: center;
+}
+.tomt[hidden] { display: none; }
+.tomt img { width: 130px; opacity: .9; }
+.tomt p { color: var(--dempa); margin: 0; font-size: 14.5px; line-height: 1.5; }
+
+.knapp {
+  background: var(--raud); color: #fff; font-size: 15px; font-weight: 700;
+  padding: 13px 22px; border-radius: 14px;
+}
+.knapp:active { background: #b40015; }
+.knapp-stor { width: 100%; padding: 16px; font-size: 16px; margin-top: 6px; }
+.tekstknapp { color: var(--dempa); font-size: 14px; padding: 12px; }
+.tekstknapp.midtstilt { display: block; width: 100%; text-align: center; }
+
+/* ---------- Botn ---------- */
+.botn {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px calc(10px + var(--trygg-botn));
+  border-top: 1px solid var(--strek); background: var(--botn-2);
+  font-size: 11.5px; color: #5c5c68;
+}
+.botn .tekstknapp { padding: 4px 8px; font-size: 12px; }
+
+/* ---------- Ark som glir opp ---------- */
+.ark-bakgrunn {
+  position: fixed; inset: 0; z-index: 50;
+  background: #000000ad; backdrop-filter: blur(3px);
+  display: flex; align-items: flex-end;
+  animation: fadeInn .18s ease;
+}
+.ark-bakgrunn[hidden] { display: none; }
+@keyframes fadeInn { from { opacity: 0; } }
+
+.ark {
+  width: 100%; background: var(--botn-2);
+  border-top: 1px solid var(--strek);
+  border-radius: 22px 22px 0 0;
+  padding: 10px 20px calc(24px + var(--trygg-botn));
+  animation: glidOpp .24s cubic-bezier(.2, .8, .3, 1);
+  max-height: 88dvh; overflow-y: auto;
+}
+@keyframes glidOpp { from { transform: translateY(100%); } }
+
+.ark-drag {
+  width: 40px; height: 4px; border-radius: 4px; background: #3a3a45;
+  margin: 4px auto 18px;
+}
+.ark h2 { margin: 0 0 14px; font-size: 19px; font-weight: 800; font-style: italic; }
+.ark-topp { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.ark-ikon {
+  width: 54px; height: 54px; flex: 0 0 auto; border-radius: 14px;
+  background: #ffffff0d; display: grid; place-items: center; overflow: hidden;
+}
+.ark-ikon img { max-width: 42px; max-height: 42px; object-fit: contain; }
+.ark-ikon .bokstav { font-size: 23px; font-weight: 900; font-style: italic; color: #fff; }
+.ark-tekst { min-width: 0; }
+.ark-tekst strong { display: block; font-size: 18px; font-weight: 700; }
+.ark-tekst span {
+  font-size: 11px; font-weight: 800; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--raud);
+}
+.ark-hjelp { font-size: 14.5px; line-height: 1.55; color: #c9c9d3; margin: 0 0 16px; }
+.ark-adresse {
+  font-size: 12px; color: #5c5c68; background: var(--botn-3);
+  border: 1px solid var(--strek); border-radius: 10px;
+  padding: 10px 12px; margin-bottom: 16px;
+  word-break: break-all;
+}
+.om-rad {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 0; border-top: 1px solid var(--strek);
+  font-size: 14px; color: var(--dempa);
+}
+.om-rad b { color: var(--tekst); font-weight: 600; }
+.om-rad + .knapp { margin-top: 18px; }

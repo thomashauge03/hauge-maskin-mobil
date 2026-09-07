@@ -1,0 +1,65 @@
+# Byggjer iOS-appen på ein Mac hjå GitHub. Gratis og utan grense så lenge
+# repoet er offentleg.
+#
+# Utan signering kjem det ut ein .app som IKKJE kan installerast på ein
+# iPhone – han er berre eit prov på at koden byggjer. For å få appen på ekte
+# telefonar trengst Apple Developer Program (99 USD/år) og desse hemmelege
+# verdiane i repoinnstillingane:
+#   BYGG_SERTIFIKAT_P12   – eksportert .p12, base64-koda
+#   BYGG_SERTIFIKAT_PASSORD
+#   PROVISIONING_PROFIL   – .mobileprovision, base64-koda
+# Da kan steget nedst slåast på.
+
+name: Bygg iOS
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  bygg:
+    runs-on: macos-15
+    timeout-minutes: 40
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Hent avhengnader
+        run: npm ci
+
+      - name: Legg til iOS og synkroniser
+        run: |
+          npx cap add ios || echo "iOS-mappa finst alt"
+          npx cap sync ios
+
+      - name: Bygg (usignert)
+        run: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build
+
+      - name: Pakk resultatet
+        run: |
+          cd ios/App/build/Build/Products/Release-iphoneos
+          mkdir -p Payload
+          cp -r App.app Payload/
+          zip -qr HaugeMaskin-usignert.ipa Payload
+          ls -la HaugeMaskin-usignert.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-usignert
+          path: ios/App/build/Build/Products/Release-iphoneos/HaugeMaskin-usignert.ipa
+          retention-days: 30
