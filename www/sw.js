@@ -1,6 +1,6 @@
 /* Servicearbeidar. Held sjølve appen tilgjengeleg utan nett, men lèt
    sidelista gå rett på nettet så ho alltid er fersk. */
-const CACHE = 'hauge-maskin-v1';
+const CACHE = 'hauge-maskin-v2';
 const SKALET = [
   './',
   './index.html',
@@ -26,8 +26,12 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
 
-  // Sidelista skal alltid hentast fersk, med den lagra kopien som reserve
-  if (url.hostname === 'raw.githubusercontent.com') {
+  // Sidelista og versjonsfila skal alltid hentast ferske, med den lagra
+  // kopien som reserve
+  const alltidFersk =
+    url.hostname === 'raw.githubusercontent.com' ||
+    url.pathname.endsWith('/versjon.json');
+  if (alltidFersk) {
     e.respondWith(
       fetch(e.request)
         .then((res) => {

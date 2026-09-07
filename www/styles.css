@@ -55,6 +55,24 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .ikonknapp.gaar svg { animation: snurr 1s linear infinite; }
 @keyframes snurr { to { transform: rotate(360deg); } }
 
+/* ---------- Melding om ny versjon ---------- */
+.oppdatering {
+  display: flex; align-items: center; gap: 12px;
+  margin: 12px 16px 0; padding: 12px 14px;
+  background: linear-gradient(135deg, #2a0509, #1a1a20);
+  border: 1px solid var(--raud); border-radius: 14px;
+}
+.oppdatering[hidden] { display: none; }
+.oppdatering-tekst { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.oppdatering-tekst strong { font-size: 14.5px; font-weight: 700; }
+.oppdatering-tekst span {
+  font-size: 12.5px; color: var(--dempa);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.oppdatering .knapp { padding: 10px 16px; font-size: 14px; flex: 0 0 auto; }
+.ikonknapp.liten { width: 32px; height: 32px; border-radius: 10px; }
+.ikonknapp.liten svg { width: 15px; height: 15px; }
+
 /* ---------- Søk ---------- */
 .sokefelt { position: relative; padding: 12px 16px 4px; }
 .sok-ikon {

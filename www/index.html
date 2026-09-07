@@ -24,6 +24,30 @@
     </button>
   </header>
 
+  <!-- Ny versjon tilgjengeleg -->
+  <div id="oppdatering" class="oppdatering" hidden>
+    <div class="oppdatering-tekst">
+      <strong id="oppdateringTittel"></strong>
+      <span id="oppdateringDetalj"></span>
+    </div>
+    <button id="oppdateringLast" class="knapp">Last ned</button>
+    <button id="oppdateringLukk" class="ikonknapp liten" aria-label="Ikkje no">
+      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+
+  <!-- Tilbod om å installere appen, vist i nettlesaren på Android -->
+  <div id="installer" class="oppdatering" hidden>
+    <div class="oppdatering-tekst">
+      <strong>Installer appen</strong>
+      <span>Får du eit ikon på skjermen og eiga innlogging</span>
+    </div>
+    <button id="installerLast" class="knapp">Last ned</button>
+    <button id="installerLukk" class="ikonknapp liten" aria-label="Ikkje no">
+      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+
   <div class="sokefelt">
     <svg class="sok-ikon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
     <input id="sok" type="search" placeholder="Søk etter side…" autocomplete="off" enterkeyhint="search" />

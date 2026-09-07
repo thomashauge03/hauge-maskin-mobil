@@ -6,7 +6,7 @@ const SIDER_URL =
   'https://raw.githubusercontent.com/thomashauge03/hauge-maskin-app/main/sider.json';
 const LAGER = 'hm-sider';
 const LAGER_TID = 'hm-sider-tid';
-const VERSJON = '1.1.0';
+const VERSJON = '1.2.0';
 
 const $ = (id) => document.getElementById(id);
 let sider = [];
@@ -236,6 +236,87 @@ async function opneSide(side) {
   window.open(url, '_blank', 'noopener');
 }
 
+/* ---------- Ny versjon ----------
+   Ein app som er installert frå ei fil kan ikkje oppdatere seg heilt av seg
+   sjølv slik Play Butikk gjer. Vi sjekkar difor kva som er nyaste versjon og
+   seier frå, så er det eitt trykk å hente ho. */
+const VERSJON_URL = 'versjon.json';
+const APK_FALLBACK =
+  'https://github.com/thomashauge03/hauge-maskin-mobil/releases/latest';
+
+const erNativ = () => {
+  const c = window.Capacitor;
+  return !!(c && c.isNativePlatform && c.isNativePlatform());
+};
+const erAndroid = () => /android/i.test(navigator.userAgent);
+
+// 1.10.0 er nyare enn 1.9.0, så vi kan ikkje samanlikne som tekst
+function nyareEnn(a, b) {
+  const x = String(a).split('.').map(Number);
+  const y = String(b).split('.').map(Number);
+  for (let i = 0; i < Math.max(x.length, y.length); i++) {
+    const p = x[i] || 0, q = y[i] || 0;
+    if (p !== q) return p > q;
+  }
+  return false;
+}
+
+function opneNedlasting(url) {
+  const mal = url || APK_FALLBACK;
+  if (erNativ()) {
+    const { Browser } = (window.Capacitor && window.Capacitor.Plugins) || {};
+    if (Browser && Browser.open) return Browser.open({ url: mal });
+  }
+  window.open(mal, '_blank', 'noopener');
+}
+
+async function sjekkVersjon() {
+  // Berre den installerte Android-appen har noko å oppdatere
+  if (!erNativ()) return;
+  try {
+    const res = await fetch(`${VERSJON_URL}?t=${Date.now()}`, { cache: 'no-store' });
+    if (!res.ok) return;
+    const info = await res.json();
+    if (!info.versjon || !nyareEnn(info.versjon, VERSJON)) return;
+
+    $('oppdateringTittel').textContent = `Ny versjon ${info.versjon}`;
+    $('oppdateringDetalj').textContent = info.endringar || 'Trykk for å hente den nye versjonen.';
+    $('oppdatering').hidden = false;
+    $('oppdateringLast').onclick = () => opneNedlasting(info.apk);
+    $('oppdateringLukk').onclick = () => {
+      $('oppdatering').hidden = true;
+      // Hopp over akkurat denne versjonen, men spør igjen ved neste
+      localStorage.setItem('hm-hoppa-versjon', info.versjon);
+    };
+    if (localStorage.getItem('hm-hoppa-versjon') === info.versjon) {
+      $('oppdatering').hidden = true;
+    }
+  } catch { /* utan nett er dette uinteressant */ }
+}
+
+// I nettlesaren på Android tilbyr vi den ekte appen i staden
+async function tilbyInstallasjon() {
+  if (erNativ() || !erAndroid()) return;
+  if (window.matchMedia('(display-mode: standalone)').matches) return;
+  if (localStorage.getItem('hm-avslo-app') === 'ja') return;
+
+  let apk = APK_FALLBACK;
+  try {
+    const res = await fetch(`${VERSJON_URL}?t=${Date.now()}`, { cache: 'no-store' });
+    if (res.ok) {
+      const info = await res.json();
+      if (info.apk) apk = info.apk;
+    }
+  } catch { /* brukar fallback */ }
+
+  $('installer').hidden = false;
+  $('installerLast').onclick = () => opneNedlasting(apk);
+  $('installerLukk').onclick = () => {
+    $('installer').hidden = true;
+    localStorage.setItem('hm-avslo-app', 'ja');
+  };
+}
+
 /* ---------- Detaljar ---------- */
 function visArk(side) {
   valdSide = side;
@@ -285,6 +366,8 @@ $('om').addEventListener('click', (e) => { if (e.target === $('om')) $('om').hid
     visTomt('Hentar sidene…');
   }
   hentSider({ stille: !!(lagra && lagra.length) });
+  sjekkVersjon();
+  tilbyInstallasjon();
 
   // Hent på nytt når appen kjem fram igjen
   document.addEventListener('visibilitychange', () => {

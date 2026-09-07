@@ -6,13 +6,19 @@ Android og iPhone får ho.
 
 ## Slik får du appen
 
+Opne denne på telefonen – ho viser rett framgangsmåte for telefonen du har:
+
+**https://thomashauge03.github.io/hauge-maskin-mobil/last-ned.html**
+
 ### Android
 
-Last ned og installer:
-**[Hauge-Maskin.apk](https://github.com/thomashauge03/hauge-maskin-mobil/releases/latest)**
-
+Trykk **Last ned appen** på sida over, og opne fila når ho er ferdig.
 Telefonen spør om lov til å installere frå ei ukjend kjelde første gongen.
 Det er fordi appen ikkje ligg i Play Butikk – trykk **Tillat** og hald fram.
+
+Appen seier sjølv frå når det kjem ein ny versjon: du får eit raudt felt
+øvst med **Last ned**. Han sjekkar `versjon.json` på nettsida ved kvar
+oppstart.
 
 ### iPhone
 

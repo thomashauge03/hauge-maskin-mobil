@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d0d0f" />
+  <link rel="apple-touch-icon" href="assets/icon.png" />
+  <title>Last ned Hauge Maskin</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body { padding: 0 0 40px; }
+    .side { padding: 0 22px; max-width: 520px; margin: 0 auto; width: 100%; }
+    .helt { text-align: center; padding: 34px 0 26px; }
+    .helt img { width: 150px; }
+    .helt h1 { font-size: 22px; font-weight: 800; font-style: italic; margin: 18px 0 6px; }
+    .helt p { color: var(--dempa); font-size: 14.5px; line-height: 1.55; margin: 0; }
+    .kort {
+      background: var(--botn-2); border: 1px solid var(--strek);
+      border-radius: 18px; padding: 20px; margin-bottom: 16px;
+    }
+    .kort h2 { font-size: 16px; font-weight: 800; margin: 0 0 4px; }
+    .kort .kva { font-size: 12.5px; color: var(--raud); font-weight: 700;
+                 letter-spacing: .1em; text-transform: uppercase; margin-bottom: 12px; }
+    .kort ol { margin: 0 0 16px; padding-left: 20px; color: #c9c9d3;
+               font-size: 14px; line-height: 1.7; }
+    .kort ol b { color: var(--tekst); }
+    .kort .knapp { width: 100%; text-align: center; display: block; text-decoration: none; }
+    .merknad { font-size: 12.5px; color: var(--dempa); line-height: 1.55; margin: 12px 0 0; }
+    .denne { border-color: var(--raud); }
+  </style>
+</head>
+<body>
+  <div class="side">
+    <div class="helt">
+      <img src="assets/logo-trim.png" alt="Hauge Maskin" />
+      <h1>Hauge Maskin på telefonen</h1>
+      <p>Alle systema samla på éin stad. Vel telefonen din under.</p>
+    </div>
+
+    <div class="kort" id="kortAndroid">
+      <div class="kva">Android</div>
+      <h2>Installer appen</h2>
+      <ol>
+        <li>Trykk <b>Last ned appen</b> under</li>
+        <li>Opne fila når ho er ferdig nedlasta</li>
+        <li>Android spør om lov – trykk <b>Tillat</b>, så <b>Installer</b></li>
+      </ol>
+      <a class="knapp" id="lenkeApk" href="https://github.com/thomashauge03/hauge-maskin-mobil/releases/latest">Last ned appen</a>
+      <p class="merknad">
+        Appen seier sjølv frå når det kjem ein ny versjon.
+      </p>
+    </div>
+
+    <div class="kort" id="kortIphone">
+      <div class="kva">iPhone</div>
+      <h2>Legg til på Hjem-skjerm</h2>
+      <ol>
+        <li>Opne denne sida i <b>Safari</b></li>
+        <li>Trykk <b>Del</b> – firkanten med pil opp</li>
+        <li>Vel <b>Legg til på Hjem-skjerm</b></li>
+      </ol>
+      <a class="knapp" href="./">Opne appen</a>
+      <p class="merknad">
+        Du får eit HM-ikon på skjermen som opnar appen i fullskjerm. Den
+        oppdaterer seg sjølv.
+      </p>
+    </div>
+
+    <p class="merknad" style="text-align:center">
+      Same sideliste som PC-appen. Nye system dukkar opp av seg sjølv.
+    </p>
+  </div>
+
+  <script>
+    // Framhev kortet som gjeld telefonen du står på
+    const android = /android/i.test(navigator.userAgent);
+    const iphone = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    if (android) document.getElementById('kortAndroid').classList.add('denne');
+    if (iphone) document.getElementById('kortIphone').classList.add('denne');
+    if (android) {
+      document.getElementById('kortAndroid').parentNode
+        .insertBefore(document.getElementById('kortAndroid'),
+                      document.getElementById('kortIphone'));
+    } else if (iphone) {
+      document.getElementById('kortIphone').parentNode
+        .insertBefore(document.getElementById('kortIphone'),
+                      document.getElementById('kortAndroid'));
+    }
+
+    // Peik rett på den nyaste APK-en
+    fetch('versjon.json?t=' + Date.now(), { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((info) => { if (info.apk) document.getElementById('lenkeApk').href = info.apk; })
+      .catch(() => { /* lenka peikar alt på siste utgjeving */ });
+  </script>
+</body>
+</html>

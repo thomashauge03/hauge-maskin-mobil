@@ -1,0 +1,6 @@
+{
+  "_om": "Nyaste versjon av mobilappen. Appen sjekkar denne fila ved oppstart og seier frå når det finst noko nytt. Blir oppdatert automatisk når ein ny versjon blir bygd.",
+  "versjon": "1.2.0",
+  "apk": "https://github.com/thomashauge03/hauge-maskin-mobil/releases/latest/download/Hauge-Maskin-1.2.0.apk",
+  "endringar": "Appen seier no frå sjølv når det finst ein ny versjon."
+}
