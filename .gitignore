@@ -21,3 +21,16 @@ DerivedData/
 *.aab
 *.ipa
 .DS_Store
+
+# --- Skal aldri i repoet ---
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.key
+*.keystore
+*.jks
+secrets.json
+*-credentials.json
+service-account*.json
