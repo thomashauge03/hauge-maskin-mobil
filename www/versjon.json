@@ -1,6 +1,6 @@
 {
   "_om": "Nyaste versjon av mobilappen. Appen sjekkar denne fila ved oppstart og seier frå når det finst noko nytt. Blir oppdatert automatisk når ein ny versjon blir bygd.",
-  "versjon": "1.3.0",
-  "apk": "https://github.com/thomashauge03/hauge-maskin-mobil/releases/latest/download/Hauge-Maskin-1.3.0.apk",
-  "endringar": "Bygd mot Android 16, og systema opnar seg no i nettlesaren si eiga fane."
+  "versjon": "1.4.0",
+  "apk": "https://github.com/thomashauge03/hauge-maskin-mobil/releases/latest/download/Hauge-Maskin-1.4.0.apk",
+  "endringar": "Strengare handtering av adresser, og appen tek ikkje lenger sikkerheitskopi av lokale data."
 }

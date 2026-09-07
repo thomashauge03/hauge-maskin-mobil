@@ -6,7 +6,19 @@ const SIDER_URL =
   'https://raw.githubusercontent.com/thomashauge03/hauge-maskin-app/main/sider.json';
 const LAGER = 'hm-sider';
 const LAGER_TID = 'hm-sider-tid';
-const VERSJON = '1.3.0';
+const VERSJON = '1.4.0';
+
+// Sidelista blir henta over nett. Skulle nokon få skrive i henne, må dei
+// ikkje kunne sende folk til «javascript:», ei fil på telefonen, eller ei
+// ukryptert side som kan avlyttast. Difor slepp berre https gjennom.
+function trygdAdresse(raa) {
+  try {
+    const u = new URL(String(raa));
+    return u.protocol === 'https:' ? u.href : null;
+  } catch {
+    return null;
+  }
+}
 
 const $ = (id) => document.getElementById(id);
 let sider = [];
@@ -44,8 +56,9 @@ async function hentSider({ stille = false } = {}) {
     const liste = (Array.isArray(json) ? json : json.pages) || [];
 
     sider = liste
-      // Sider merkte 'pc' i den felles lista høyrer ikkje heime på telefonen
-      .filter((p) => p && p.name && p.url && p.hidden !== true && p.plattform !== 'pc')
+      // Sider merkte 'pc' i den felles lista høyrer ikkje heime på telefonen.
+      // Adresser som ikkje er https blir forkasta med ein gong.
+      .filter((p) => p && p.name && trygdAdresse(p.url) && p.hidden !== true && p.plattform !== 'pc')
       .map((p) => ({
         id: String(p.id || p.name),
         name: String(p.name),
@@ -200,7 +213,11 @@ function visStatus(overstyr) {
    dei difor i ein ekte nettlesarvisning. Inne i appen brukar vi Capacitor,
    elles ei ny fane. */
 async function opneSide(side) {
-  const url = side.url;
+  const url = trygdAdresse(side.url);
+  if (!url) {
+    alert(`«${side.name}» har ei adresse appen ikkje kan opne. Berre https er tillate.`);
+    return;
+  }
   const cap = window.Capacitor;
 
   // Custom Tabs på Android og SFSafariViewController på iPhone. Systema
