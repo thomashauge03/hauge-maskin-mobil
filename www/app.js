@@ -6,7 +6,7 @@ const SIDER_URL =
   'https://raw.githubusercontent.com/thomashauge03/hauge-maskin-app/main/sider.json';
 const LAGER = 'hm-sider';
 const LAGER_TID = 'hm-sider-tid';
-const VERSJON = '1.0.0';
+const VERSJON = '1.1.0';
 
 const $ = (id) => document.getElementById(id);
 let sider = [];
@@ -44,7 +44,8 @@ async function hentSider({ stille = false } = {}) {
     const liste = (Array.isArray(json) ? json : json.pages) || [];
 
     sider = liste
-      .filter((p) => p && p.name && p.url && p.hidden !== true)
+      // Sider merkte 'pc' i den felles lista høyrer ikkje heime på telefonen
+      .filter((p) => p && p.name && p.url && p.hidden !== true && p.plattform !== 'pc')
       .map((p) => ({
         id: String(p.id || p.name),
         name: String(p.name),
