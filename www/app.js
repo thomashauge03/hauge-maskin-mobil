@@ -6,7 +6,7 @@ const SIDER_URL =
   'https://raw.githubusercontent.com/thomashauge03/hauge-maskin-app/main/sider.json';
 const LAGER = 'hm-sider';
 const LAGER_TID = 'hm-sider-tid';
-const VERSJON = '1.2.0';
+const VERSJON = '1.3.0';
 
 const $ = (id) => document.getElementById(id);
 let sider = [];
@@ -203,29 +203,19 @@ async function opneSide(side) {
   const url = side.url;
   const cap = window.Capacitor;
 
+  // Custom Tabs på Android og SFSafariViewController på iPhone. Systema
+  // køyrer da i nettlesaren sitt eige rom, ikkje i ein WebView vi styrer.
+  // Vi ser aldri passorda, økta blir delt med nettlesaren så folk slepp å
+  // logge inn på nytt, og Google sin gjennomgang reagerer ikkje på det.
   if (cap && cap.isNativePlatform && cap.isNativePlatform()) {
     try {
-      const { InAppBrowser } = cap.Plugins || {};
-      if (InAppBrowser && InAppBrowser.openInWebView) {
-        await InAppBrowser.openInWebView({
-          url,
-          options: {
-            showURL: true,
-            showToolbar: true,
-            clearCache: false,      // innlogging skal halde seg
-            clearSessionCache: false,
-            toolbarColor: '#0d0d0f',
-            showNavigationButtons: true,
-            leftToRight: false,
-            closeButtonText: 'Lukk',
-            toolbarTextColor: '#ffffff'
-          }
-        });
-        return;
-      }
       const { Browser } = cap.Plugins || {};
       if (Browser && Browser.open) {
-        await Browser.open({ url, presentationStyle: 'fullscreen', toolbarColor: '#0d0d0f' });
+        await Browser.open({
+          url,
+          presentationStyle: 'fullscreen',
+          toolbarColor: '#0d0d0f'
+        });
         return;
       }
     } catch (err) {
