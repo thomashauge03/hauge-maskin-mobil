@@ -4,6 +4,26 @@ Alt du treng å lime inn. Filene ligg i denne mappa.
 
 ---
 
+## 0. Kva slags konto
+
+**Personleg konto.** Du treng ikkje selskap, ikkje organisasjonsnummer og
+ikkje D-U-N-S-nummer for det vi skal gjere.
+
+| | Personleg | Organisasjon |
+| --- | --- | --- |
+| Kostnad | 25 USD eingong | 25 USD eingong |
+| Krev selskap | Nei | Ja – med D-U-N-S, 1–4 veker |
+| Internt testspor | **Ja** | Ja |
+| Offentleg butikk | Krev 12 testarar i 14 dagar først | Ingen slik test |
+
+Sidan appen skal på **internt testspor** og ikkje i den offentlege butikken,
+held personleg konto heilt fint. Får de AS seinare, kan kontoen bytast til
+organisasjon då.
+
+Du treng: BankID eller pass, ei e-postadresse, og eit betalingskort.
+
+---
+
 ## 1. Appnamn
 ```
 Hauge Maskin
@@ -35,7 +55,11 @@ enkelte systema for å logge inn.
 ```
 
 ## 4. Kategori
-**Bedrift** (Business). Ikkje «Verktøy».
+Butikkategori: **Bedrift**.
+
+I innhaldsklassifiseringa (IARC) er det eit anna spørsmål — der vel du
+**«Utility, Productivity, Communication, or Other»**. «Business» finst ikkje
+der.
 
 ## 5. Kontaktopplysningar
 - E-post: firma-e-postadressa – **ikkje** gmail
@@ -67,12 +91,19 @@ Dette er det viktigaste skjemaet. Appen samlar ikkje inn noko.
 | Krypterer appen data i transitt? | **Ja** (alt går over HTTPS) |
 | Kan brukarar be om at data blir sletta? | **Ja** – ved å avinstallere |
 
+Du er fritatt frå dette skjemaet så lenge appen berre ligg på internt
+testspor. Skal han seinare offentleg, må du erklære det dei eigne
+Vercel-appane faktisk samlar inn – ikkje svare blankt nei.
+
 Blir du spurt om data som blir behandla i tredjepartssystema appen opnar:
 dei køyrer i nettlesaren si eiga fane, ikkje i appen, og appen les dei ikkje.
 Det er difor ikkje «innsamling» i Play si tyding.
 
 ### Innhaldsklassifisering (IARC)
-- Kategori: **Verktøy / produktivitet / kommunikasjon**
+Denne er obligatorisk på alle spor, òg internt.
+- Kategori: **Utility, Productivity, Communication, or Other**
+- Gir appen ufiltrert tilgang til internett? **Nei** – han opnar 14 faste
+  adresser, ikkje det opne nettet
 - Alle spørsmål om vald, sex, rusmiddel, pengespel: **nei**
 - Deler appen brukarplassering? **Nei**
 - Lèt appen brukarar kommunisere med kvarandre? **Nei**
@@ -83,6 +114,7 @@ Forventa resultat: **PEGI 3 / alle aldrar**.
 ### Målgruppe
 - Aldersgruppe: **18 og over**
 - Er appen retta mot barn? **Nei**
+- **Ikkje** hak av «Restrict Minor Access» – det stengjer ute lærlingar på 16–17
 
 ### Reklame
 - Inneheld appen reklame? **Nei**
@@ -101,7 +133,7 @@ tredjepartssystem – men då er du på feil spor, sjå råd i sjekklista.
 
 | Fil | Kvar |
 | --- | --- |
-| `Hauge-Maskin-1.3.0.aab` | Play Console → Internt testspor → Ny utgjeving |
+| `Hauge-Maskin-1.4.0.aab` | Play Console → Internt testspor → Ny utgjeving |
 
 Ligg i `android/app/build/outputs/bundle/release/app-release.aab`, og som
 vedlegg på siste utgjeving i GitHub.
