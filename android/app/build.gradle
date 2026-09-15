@@ -51,8 +51,29 @@ repositories {
     }
 }
 
+/*
+ * androidbrowserhelper dreg nyaste androidx.browser og androidx.core med seg,
+ * og dei krev ein nyare Android Gradle-plugin enn Capacitor 7 set opp. Vi
+ * held dei difor på versjonane prosjektet alt byggjer mot – API-a vi brukar
+ * (TrustedWebActivityIntentBuilder, TwaLauncher) har vore stabile lenge.
+ *
+ * Blir Capacitor oppgradert og byggjeplugin følgjer med, kan heile denne
+ * blokka fjernast.
+ */
+configurations.all {
+    resolutionStrategy {
+        force "androidx.browser:browser:1.8.0"
+        force "androidx.core:core:$androidxCoreVersion"
+        force "androidx.core:core-ktx:$androidxCoreVersion"
+    }
+}
+
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
+    // Fullskjerm utan adresselinje for våre eigne system. Dreg androidx.browser
+    // inn transitivt – den ligg ikkje på klassestien til denne modulen elles,
+    // sjølv om Capacitor sitt Browser-plugin brukar han. Sjå twa/LES-MEG.md.
+    implementation "com.google.androidbrowserhelper:androidbrowserhelper:2.7.3"
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
