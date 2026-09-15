@@ -87,7 +87,7 @@ async function hentSider({ stille = false } = {}) {
         id: String(p.id || p.name),
         name: String(p.name),
         url: String(p.url),
-        group: p.group ? String(p.group) : 'Anna',
+        group: p.group ? String(p.group) : 'Annet',
         color: p.color ? String(p.color) : '#e2001a',
         image: p.image ? String(p.image) : '',
         help: p.help ? String(p.help) : ''
@@ -237,7 +237,7 @@ function visStatus(overstyr) {
    snart det serverer assetlinks.json, uten at noen må installere på nytt.
 
    Alle blir sendt med, ikke bare den ene vi åpner. Ellers mister brukeren
-   fullskjerm i det han trykker seg fra ett av våre system til et annet.
+   fullskjerm i det han trykker seg fra ett av våre systemer til et annet.
    Det koster ingenting: Chrome henter beviset først når han faktisk kommer til
    et domene. */
 function klarerteOpphav() {
