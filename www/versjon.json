@@ -1,6 +1,6 @@
 {
-  "_om": "Nyaste versjon av mobilappen. Appen sjekkar denne fila ved oppstart og seier frå når det finst noko nytt. Blir oppdatert automatisk når ein ny versjon blir bygd.",
-  "versjon": "1.5.0",
-  "apk": "https://github.com/thomashauge03/hauge-maskin-mobil/releases/latest/download/Hauge-Maskin-1.5.0.apk",
-  "endringar": "Appen har fått eiga innlogging. Du registrerer deg sjølv og kjem inn når du er godkjend. Våre eigne system opnar seg no i fullskjerm utan adresselinje."
+  "_om": "Nyeste versjon av mobilappen. Appen sjekker denne fila ved oppstart og sier fra når det finnes noe nytt. Blir oppdatert når en ny versjon blir bygd.",
+  "versjon": "1.6.0",
+  "apk": "https://github.com/thomashauge03/hauge-maskin-mobil/releases/latest/download/Hauge-Maskin-1.6.0.apk",
+  "endringar": "Alt i appen er nå på bokmål. Bunnfeltet lå under navigasjonslinja på Android og er rettet."
 }
