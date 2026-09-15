@@ -41,11 +41,28 @@ Same adressa fungerer òg på Android om du ikkje vil installere APK-en.
 - Lista blir lagra på telefonen, så appen virkar òg utan dekning. Han hentar
   ny liste når du opnar appen igjen.
 
-## Kvifor sidene ikkje kan visast inni ei nettside
+## Kvifor systema opnar seg i nettlesaren
 
-Fleire av systema set `X-Frame-Options: DENY` – Tilbudssystem, Utleie og Vercel
-gjer det. Det hindrar at dei blir viste inni ei anna nettside. Difor opnar
-appen dei i ei ekte nettlesarvisning i staden for ei ramme.
+Appen opnar systema i nettlesaren si eiga visning – Custom Tabs på Android,
+Safari på iPhone – i staden for i ein WebView appen styrer sjølv. Det er eit
+medvite val:
+
+- **Appen ser aldri passorda.** Det betyr mest for SmartDok og Tripletex, som
+  ikkje er våre system og der folk skriv inn passord vi ikkje har noko med.
+- **På Android blir økta delt med Chrome**, så folk slepp å logge inn på nytt.
+  Dette gjeld ikkje iPhone: SFSafariViewController har ikkje hatt delt økt med
+  Safari sidan iOS 11.
+- **Vi held oss unna gråsona** rundt Play sin policy for appar som viser andre
+  sine nettstader.
+
+Prisen er adresselinja øvst, og ho kan ikkje skruast av. Det er med vilje:
+utan henne kunne ein app teikne sitt eige innloggingsskjema oppå og stele
+passordet. Custom Tabs viser alltid domenet.
+
+Ei **ramme** inni appen er ein annan sak, og er utelukka for to av systema:
+Tilbudssystem (`frame-ancestors 'none'` og `X-Frame-Options: DENY`) og Utleie
+(`DENY`). Dei andre set ingen slik header, men ramme er uaktuelt uansett av
+grunnane over.
 
 ## Bygge sjølv
 

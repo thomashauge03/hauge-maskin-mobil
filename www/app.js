@@ -208,10 +208,31 @@ function visStatus(overstyr) {
   $('status').textContent = overstyr || `${sider.length} sider · henta ${nar}`;
 }
 
+/* Domena appen kan vise i fullskjerm. Lista blir bygd frå sidelista ved kvar
+   opning, ikkje bakt inn i appen – difor får eit nytt system fullskjerm så
+   snart det serverer assetlinks.json, utan at nokon må installere på nytt.
+
+   Alle blir sende med, ikkje berre den eine vi opnar. Elles mistar brukaren
+   fullskjerm i det han trykkjer seg frå eitt av våre system til eit anna.
+   Det kostar ingenting: Chrome hentar beviset først når han faktisk kjem til
+   eit domene. */
+function klarerteOpphav() {
+  const sett = new Set();
+  for (const p of sider) {
+    const trygg = trygdAdresse(p.url);
+    if (!trygg) continue;
+    try {
+      sett.add(new URL(trygg).origin);
+    } catch { /* hoppar over */ }
+  }
+  return [...sett];
+}
+
 /* ---------- Opne ei side ----------
-   Sidene set X-Frame-Options, så dei kan ikkje visast i ei ramme. Vi opnar
-   dei difor i ein ekte nettlesarvisning. Inne i appen brukar vi Capacitor,
-   elles ei ny fane. */
+   Våre eigne system opnar seg i fullskjerm. Alt anna – og alt som ikkje har
+   bevist at det høyrer til appen – opnar seg i nettlesaren si eiga visning,
+   med adresselinje. Det er eit medvite val, ikkje ei teknisk naudsyn, og for
+   SmartDok og Tripletex er adresselinja noko vi vil ha. Sjå README. */
 async function opneSide(side) {
   const url = trygdAdresse(side.url);
   if (!url) {
@@ -220,11 +241,27 @@ async function opneSide(side) {
   }
   const cap = window.Capacitor;
 
-  // Custom Tabs på Android og SFSafariViewController på iPhone. Systema
-  // køyrer da i nettlesaren sitt eige rom, ikkje i ein WebView vi styrer.
-  // Vi ser aldri passorda, økta blir delt med nettlesaren så folk slepp å
-  // logge inn på nytt, og Google sin gjennomgang reagerer ikkje på det.
   if (cap && cap.isNativePlatform && cap.isNativePlatform()) {
+    // Våre eigne system opnar seg i fullskjerm utan adresselinje, dersom
+    // domenet beviser at det høyrer til appen. Manglar beviset, gjer Chrome
+    // sjølv det same som linja under: ein vanleg Custom Tab. Difor er dette
+    // eit forsøk og ikkje eit val – vi treng ikkje vite kva som er sett opp.
+    try {
+      const { Twa } = cap.Plugins || {};
+      if (Twa && Twa.open) {
+        await Twa.open({ url, origins: klarerteOpphav() });
+        return;
+      }
+    } catch (err) {
+      // Ingen nettlesar med TWA-støtte. Custom Tabs under tek over.
+      console.warn('Fullskjerm ikkje tilgjengeleg:', err);
+    }
+
+    // Custom Tabs på Android og SFSafariViewController på iPhone. Systema
+    // køyrer da i nettlesaren sitt eige rom, ikkje i ein WebView vi styrer,
+    // så vi ser aldri passorda. På Android blir økta delt med Chrome, så
+    // folk slepp å logge inn på nytt – det gjeld ikkje iPhone, der
+    // SFSafariViewController ikkje har delt økt med Safari sidan iOS 11.
     try {
       const { Browser } = cap.Plugins || {};
       if (Browser && Browser.open) {
