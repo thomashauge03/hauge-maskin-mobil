@@ -4,9 +4,24 @@
 
 const SIDER_URL =
   'https://raw.githubusercontent.com/thomashauge03/hauge-maskin-app/main/sider.json';
-const LAGER = 'hm-sider';
-const LAGER_TID = 'hm-sider-tid';
-const VERSJON = '1.4.0';
+const VERSJON = '1.5.0';
+
+/* Den lagra lista høyrer til éin brukar, ikkje til telefonen.
+   Loggar Ola ut og Kari inn på same telefon, ville Kari sett Olas liste
+   heilt til første henting var ferdig. Nøkkelen får difor brukar-id-en i
+   seg, og alt blir tømt ved utlogging. */
+const lagerNokkel = () => `hm-sider-${window.HM_NAV.brukarId() || 'ukjend'}`;
+const lagerTidNokkel = () => `${lagerNokkel()}-tid`;
+
+/* Dei gamle nøklane frå før innlogginga blir liggjande att på kvar telefon
+   som har hatt appen, med heile firmalista, på ei eining der ingen lenger
+   er innlogga. Ingen les dei. Vi ryddar dei bort ein gong. */
+function ryddGamleNoklar() {
+  try {
+    localStorage.removeItem('hm-sider');
+    localStorage.removeItem('hm-sider-tid');
+  } catch { /* ingenting å gjere */ }
+}
 
 // Sidelista blir henta over nett. Skulle nokon få skrive i henne, må dei
 // ikkje kunne sende folk til «javascript:», ei fil på telefonen, eller ei
@@ -27,7 +42,7 @@ let valdSide = null;
 /* ---------- Lagring ---------- */
 function lesLokalt() {
   try {
-    const raa = localStorage.getItem(LAGER);
+    const raa = localStorage.getItem(lagerNokkel());
     return raa ? JSON.parse(raa) : null;
   } catch {
     return null;
@@ -36,12 +51,21 @@ function lesLokalt() {
 
 function skrivLokalt(liste) {
   try {
-    localStorage.setItem(LAGER, JSON.stringify(liste));
-    localStorage.setItem(LAGER_TID, new Date().toISOString());
+    localStorage.setItem(lagerNokkel(), JSON.stringify(liste));
+    localStorage.setItem(lagerTidNokkel(), new Date().toISOString());
   } catch { /* full lagring – ikkje kritisk */ }
 }
 
-const sistHenta = () => localStorage.getItem(LAGER_TID);
+const sistHenta = () => localStorage.getItem(lagerTidNokkel());
+
+/* Ved utlogging skal ingenting av den førre brukaren stå att. */
+function tomLokalt() {
+  try {
+    localStorage.removeItem(lagerNokkel());
+    localStorage.removeItem(lagerTidNokkel());
+  } catch { /* ingenting å gjere */ }
+  sider = [];
+}
 
 /* ---------- Hent lista ---------- */
 async function hentSider({ stille = false } = {}) {
@@ -391,6 +415,7 @@ $('btnOm').addEventListener('click', () => {
   $('omSynk').textContent = t
     ? new Date(t).toLocaleString('nb-NO', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
     : 'aldri';
+  $('omBrukar').textContent = meg || '–';
   $('omTekst').textContent =
     'Alle systema til Hauge Maskin samla på éin stad. Lista blir henta automatisk, ' +
     'så nye sider dukkar opp av seg sjølv.';
@@ -399,8 +424,67 @@ $('btnOm').addEventListener('click', () => {
 $('omLukk').addEventListener('click', () => { $('om').hidden = true; });
 $('om').addEventListener('click', (e) => { if (e.target === $('om')) $('om').hidden = true; });
 
+/* ---------- Porten ---------- */
+const PORT_DELAR = [
+  'portLastar', 'portLogin', 'portNy', 'portVent',
+  'portSperra', 'portUtanPerson', 'portUtanNett'
+];
+
+let meg = null;
+let appenGaar = false;
+
+function visPortDel(id) {
+  $('port').hidden = false;
+  for (const d of PORT_DELAR) $(d).hidden = d !== id;
+}
+
+function visPortFeil(id, melding) {
+  const p = $(id);
+  p.textContent = melding || '';
+  p.hidden = !melding;
+}
+
+/* Kven slepp inn, og kva skjerm skal dei sjå?
+   Returnerer true berre når lista skal visast. */
+async function avgjerPort() {
+  if (!window.HM_NAV.erInnlogga()) {
+    visPortDel('portLogin');
+    return false;
+  }
+
+  visPortDel('portLastar');
+  const svar = await window.HM_NAV.minStatus();
+  meg = svar.navn || null;
+
+  switch (svar.tilstand) {
+    case 'godkjent':
+      $('port').hidden = true;
+      return true;
+
+    case 'utanNett':
+      /* Utan nett, men med ei lagra liste frå før: slepp inn på det vi har.
+         Å stengje nokon ute av appen fordi dei står utan dekning ville vore
+         å gjere den eine tingen appen finst for – å vere til stades ute på
+         ein jobb – umogleg. */
+      if ((lesLokalt() || []).length) {
+        $('port').hidden = true;
+        return true;
+      }
+      visPortDel('portUtanNett');
+      return false;
+
+    case 'ventar': visPortDel('portVent'); return false;
+    case 'sperra': visPortDel('portSperra'); return false;
+    case 'utanPerson': visPortDel('portUtanPerson'); return false;
+    default: visPortDel('portLogin'); return false;
+  }
+}
+
 /* ---------- Oppstart ---------- */
-(function start() {
+function startApp() {
+  if (appenGaar) return;
+  appenGaar = true;
+
   const lagra = lesLokalt();
   if (lagra && lagra.length) {
     sider = lagra;
@@ -412,10 +496,93 @@ $('om').addEventListener('click', (e) => { if (e.target === $('om')) $('om').hid
   hentSider({ stille: !!(lagra && lagra.length) });
   sjekkVersjon();
   tilbyInstallasjon();
+}
 
-  // Hent på nytt når appen kjem fram igjen
+async function opneEllerVis() {
+  if (await avgjerPort()) startApp();
+}
+
+/* ---------- Hendingar i porten ---------- */
+$('tilNy').addEventListener('click', () => {
+  visPortFeil('nyFeil', '');
+  visPortDel('portNy');
+});
+$('tilLogin').addEventListener('click', () => {
+  visPortFeil('loginFeil', '');
+  visPortDel('portLogin');
+});
+$('ventSjekk').addEventListener('click', opneEllerVis);
+$('nettSjekk').addEventListener('click', opneEllerVis);
+
+$('skjemaLogin').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const knapp = e.target.querySelector('button[type=submit]');
+  knapp.disabled = true;
+  visPortFeil('loginFeil', '');
+
+  const svar = await window.HM_NAV.loggInn(
+    $('loginEpost').value.trim(),
+    $('loginPassord').value
+  );
+  knapp.disabled = false;
+
+  if (!svar.ok) { visPortFeil('loginFeil', svar.feil); return; }
+  $('loginPassord').value = '';
+  await opneEllerVis();
+});
+
+$('skjemaNy').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const knapp = e.target.querySelector('button[type=submit]');
+  knapp.disabled = true;
+  visPortFeil('nyFeil', '');
+
+  const epost = $('nyEpost').value.trim();
+  const passord = $('nyPassord').value;
+  const svar = await window.HM_NAV.registrer({
+    navn: $('nyNavn').value.trim(),
+    epost,
+    passord
+  });
+  knapp.disabled = false;
+
+  if (!svar.ok) { visPortFeil('nyFeil', svar.feil); return; }
+
+  /* Er e-postbekreftelse slått på i navet, gir registreringa inga økt. Da
+     loggar vi inn med det same – brukaren har nettopp skrive passordet, og
+     skal ikkje måtte gjere det to gonger for å kome til venteskjermen. */
+  if (!svar.medOkt) await window.HM_NAV.loggInn(epost, passord);
+
+  $('nyPassord').value = '';
+  await opneEllerVis();
+});
+
+async function loggUtOgTilbake() {
+  await window.HM_NAV.loggUt();
+  tomLokalt();
+  meg = null;
+  appenGaar = false;
+  $('om').hidden = true;
+  visPortFeil('loginFeil', '');
+  visPortDel('portLogin');
+}
+
+for (const k of document.querySelectorAll('.portUt')) {
+  k.addEventListener('click', loggUtOgTilbake);
+}
+$('omLoggUt').addEventListener('click', loggUtOgTilbake);
+
+/* ---------- I gang ---------- */
+(function start() {
+  ryddGamleNoklar();
+  opneEllerVis();
+
+  /* Når appen kjem fram igjen: står porten open, sjekkar vi om nokon har
+     godkjent oss i mellomtida. Elles hentar vi lista på nytt. */
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) hentSider({ stille: true });
+    if (document.hidden) return;
+    if (!$('port').hidden) opneEllerVis();
+    else hentSider({ stille: true });
   });
 
   // Gjer appen installerbar frå nettlesaren. Inne i den native appen har

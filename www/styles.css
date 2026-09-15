@@ -201,3 +201,49 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 }
 .om-rad b { color: var(--tekst); font-weight: 600; }
 .om-rad + .knapp { margin-top: 18px; }
+
+/* ---------- Porten ----------
+   Ligg over alt til vi veit kven som held telefonen. Han er synleg i
+   HTML-en frå start og blir skrudd av når økta er i orden – motsett ville
+   sidelista blinka fram eit augeblikk før innlogginga rakk å teikne seg. */
+.port {
+  position: fixed; inset: 0; z-index: 100;
+  background: var(--botn);
+  display: flex; align-items: center; justify-content: center;
+  padding: calc(24px + var(--trygg-topp)) 22px calc(24px + var(--trygg-botn));
+  overflow-y: auto;
+}
+.port[hidden] { display: none; }
+
+.port-innhald { width: 100%; max-width: 380px; }
+.port-logo { display: block; height: 34px; margin: 0 auto 28px; opacity: .9; }
+
+.port-tittel {
+  font-size: 22px; font-weight: 800; letter-spacing: -.01em;
+  margin: 0 0 10px; text-align: center;
+}
+.port-tekst {
+  color: var(--dempa); font-size: 14px; line-height: 1.5;
+  margin: 0 0 20px; text-align: center;
+}
+
+.port-skjema { display: flex; flex-direction: column; gap: 10px; }
+.port-skjema input {
+  width: 100%; padding: 14px 16px;
+  background: var(--botn-3); border: 1px solid var(--strek); border-radius: 14px;
+  color: var(--tekst); font-size: 16px; font-family: inherit; outline: none;
+  -webkit-appearance: none;
+}
+.port-skjema input:focus { border-color: var(--raud); }
+.port-skjema input::placeholder { color: #62626e; }
+
+/* Feilmeldinga er raud tekst OG står der knappen er – farge åleine er
+   ikkje nok for den som ikkje skil raudt frå grønt. */
+.port-feil {
+  margin: 2px 0 0; font-size: 14px; line-height: 1.45; color: #ff6b7a;
+}
+.port-feil[hidden] { display: none; }
+
+.port-del[hidden] { display: none; }
+.port-del .knapp-stor { margin-top: 8px; }
+.port-del .tekstknapp { margin-top: 6px; }

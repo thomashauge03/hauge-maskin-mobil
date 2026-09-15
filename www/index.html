@@ -14,6 +14,88 @@
 </head>
 <body>
 
+  <!-- Porten. Ligg over alt til vi veit kven som held telefonen.
+       Han er synleg frå start og blir skrudd av når økta er i orden –
+       motsett ville lista blinka fram eit augeblikk før innlogginga. -->
+  <div id="port" class="port">
+    <div class="port-innhald">
+      <img class="port-logo" src="assets/logo-trim.png" alt="Hauge Maskin" />
+
+      <!-- Startar her medan vi sjekkar om vi alt er innlogga -->
+      <section id="portLastar" class="port-del">
+        <p class="port-tekst">Eit augeblikk…</p>
+      </section>
+
+      <section id="portLogin" class="port-del" hidden>
+        <h1 class="port-tittel">Logg inn</h1>
+        <form id="skjemaLogin" class="port-skjema">
+          <input id="loginEpost" type="email" inputmode="email" autocomplete="username"
+                 placeholder="E-post" required autocapitalize="none" />
+          <input id="loginPassord" type="password" autocomplete="current-password"
+                 placeholder="Passord" required />
+          <p id="loginFeil" class="port-feil" hidden></p>
+          <button type="submit" class="knapp knapp-stor">Logg inn</button>
+        </form>
+        <button id="tilNy" class="tekstknapp midtstilt">Eg har ikkje konto</button>
+      </section>
+
+      <section id="portNy" class="port-del" hidden>
+        <h1 class="port-tittel">Be om tilgang</h1>
+        <p class="port-tekst">
+          Du kjem inn når nokon har godkjent deg.
+        </p>
+        <form id="skjemaNy" class="port-skjema">
+          <input id="nyNavn" type="text" autocomplete="name" placeholder="Namn" required />
+          <input id="nyEpost" type="email" inputmode="email" autocomplete="username"
+                 placeholder="E-post" required autocapitalize="none" />
+          <input id="nyPassord" type="password" autocomplete="new-password"
+                 placeholder="Passord – minst seks teikn" required minlength="6" />
+          <p id="nyFeil" class="port-feil" hidden></p>
+          <button type="submit" class="knapp knapp-stor">Send</button>
+        </form>
+        <button id="tilLogin" class="tekstknapp midtstilt">Eg har konto</button>
+      </section>
+
+      <section id="portVent" class="port-del" hidden>
+        <h1 class="port-tittel">Ventar på godkjenning</h1>
+        <p class="port-tekst">
+          Førespurnaden er sendt. Du får tilgang så snart nokon har sagt ja.
+          Prøv igjen litt seinare.
+        </p>
+        <button id="ventSjekk" class="knapp knapp-stor">Sjekk på nytt</button>
+        <button class="tekstknapp midtstilt portUt">Logg ut</button>
+      </section>
+
+      <section id="portSperra" class="port-del" hidden>
+        <h1 class="port-tittel">Du har ikkje tilgang</h1>
+        <p class="port-tekst">
+          Kontoen din er stengd. Ta kontakt med den som styrer tilgangane om
+          dette ikkje stemmer.
+        </p>
+        <button class="tekstknapp midtstilt portUt">Logg ut</button>
+      </section>
+
+      <!-- Registreringa blei aldri til ein person. Brukaren kan ikkje gjere
+           noko med det sjølv, så skjermen seier kva som må skje. -->
+      <section id="portUtanPerson" class="port-del" hidden>
+        <h1 class="port-tittel">Noko gjekk gale</h1>
+        <p class="port-tekst">
+          Kontoen blei oppretta, men registreringa kom ikkje heilt fram. Sei
+          frå til den som styrer tilgangane – dei ser dette og kan rette det.
+        </p>
+        <button class="tekstknapp midtstilt portUt">Logg ut</button>
+      </section>
+
+      <section id="portUtanNett" class="port-del" hidden>
+        <h1 class="port-tittel">Ingen kontakt</h1>
+        <p class="port-tekst">
+          Fekk ikkje snakka med Hauge Maskin. Sjekk at du har nett.
+        </p>
+        <button id="nettSjekk" class="knapp knapp-stor">Prøv igjen</button>
+      </section>
+    </div>
+  </div>
+
   <header class="topp">
     <img class="logo" src="assets/logo-trim.png" alt="Hauge Maskin" />
     <div class="tittel">
@@ -96,10 +178,13 @@
       <a class="om-rad" href="personvern.html" style="text-decoration:none">
         <span>Personvern</span><b>Les →</b>
       </a>
+      <div class="om-rad"><span>Innlogga som</span><b id="omBrukar">–</b></div>
       <button id="omLukk" class="knapp knapp-stor">Lukk</button>
+      <button id="omLoggUt" class="tekstknapp midtstilt">Logg ut</button>
     </div>
   </div>
 
+  <script src="nav.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
