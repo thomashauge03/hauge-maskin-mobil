@@ -122,7 +122,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .rad-pil { color: #4a4a55; flex: 0 0 auto; }
 .rad-pil svg { width: 18px; height: 18px; }
 
-/* ---------- Tomt / lastar ---------- */
+/* ---------- Tomt / laster ---------- */
 .tomt {
   flex: 1; display: flex; flex-direction: column; align-items: center;
   justify-content: center; gap: 14px; padding: 40px 30px; text-align: center;
@@ -203,9 +203,9 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .om-rad + .knapp { margin-top: 18px; }
 
 /* ---------- Porten ----------
-   Ligg over alt til vi veit kven som held telefonen. Han er synleg i
-   HTML-en frå start og blir skrudd av når økta er i orden – motsett ville
-   sidelista blinka fram eit augeblikk før innlogginga rakk å teikne seg. */
+   Ligger over alt til vi vet hvem som holder telefonen. Den er synlig i
+   HTML-en fra start og blir skrudd av når økta er i orden – ellers ville
+   sidelista blinket fram et øyeblikk før innloggingen rakk å tegne seg. */
 .port {
   position: fixed; inset: 0; z-index: 100;
   background: var(--botn);
@@ -237,8 +237,8 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .port-skjema input:focus { border-color: var(--raud); }
 .port-skjema input::placeholder { color: #62626e; }
 
-/* Feilmeldinga er raud tekst OG står der knappen er – farge åleine er
-   ikkje nok for den som ikkje skil raudt frå grønt. */
+/* Feilmeldingen er rød tekst OG står der knappen er – farge alene er
+   ikke nok for den som ikke skiller rødt fra grønt. */
 .port-feil {
   margin: 2px 0 0; font-size: 14px; line-height: 1.45; color: #ff6b7a;
 }

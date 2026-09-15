@@ -1,10 +1,10 @@
-/* Servicearbeidar. Held sjølve appen tilgjengeleg utan nett, men lèt
-   sidelista gå rett på nettet så ho alltid er fersk. */
-/* Namnet MÅ endrast når appen blir endra. Skalet blir servert frå den
-   lagra kopien utan å spørje nettet, så eit uendra namn tyder at alle som
-   har appen på heim-skjermen held fram med den gamle utgåva på ubestemt
-   tid – òg etter at ei ny er lagd ut. */
-const CACHE = 'hauge-maskin-v3';
+/* Servicearbeider. Holder selve appen tilgjengelig uten nett, men lar
+   sidelisten gå rett på nettet så den alltid er fersk. */
+/* Navnet MÅ endres når appen blir endret. Skalet blir servert fra den
+   lagrede kopien uten å spørre nettet, så et uendret navn betyr at alle som
+   har appen på hjem-skjermen fortsetter med den gamle utgaven på ubestemt
+   tid – også etter at en ny er lagt ut. */
+const CACHE = 'hauge-maskin-v4';
 const SKALET = [
   './',
   './index.html',
@@ -31,7 +31,7 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
 
-  // Sidelista og versjonsfila skal alltid hentast ferske, med den lagra
+  // Sidelisten og versjonsfilen skal alltid hentes ferske, med den lagrede
   // kopien som reserve
   const alltidFersk =
     url.hostname === 'raw.githubusercontent.com' ||
@@ -49,11 +49,11 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  /* Sjølve appen: lagra kopi først, så nettet.
-     Merk at dette berre gjeld vårt eige opphav. Innlogging og status går
-     til navet, altså eit anna opphav, og skal ALDRI hamne her – eit lagra
-     svar om kven du er ville overlevd både utlogging og at nokon sperra
-     deg. Dei fell gjennom til nettet av seg sjølve. */
+  /* Selve appen: lagret kopi først, så nettet.
+     Merk at dette bare gjelder vårt eget opphav. Innlogging og status går
+     til navet, altså et annet opphav, og skal ALDRI havne her – et lagret
+     svar om hvem du er ville overlevd både utlogging og at noen sperret
+     deg. De faller gjennom til nettet av seg selv. */
   if (e.request.method === 'GET' && url.origin === self.location.origin) {
     e.respondWith(caches.match(e.request).then((treff) => treff || fetch(e.request)));
   }

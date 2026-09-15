@@ -1,31 +1,31 @@
 /* Hauge Maskin – mobil
-   Same felles sideliste som skrivebordsappen. Lista blir henta frå GitHub og
-   lagra lokalt, så appen virkar òg utan nett. */
+   Samme felles sideliste som skrivebordsappen. Lista blir hentet fra GitHub og
+   lagret lokalt, så appen virker også uten nett. */
 
 const SIDER_URL =
   'https://raw.githubusercontent.com/thomashauge03/hauge-maskin-app/main/sider.json';
-const VERSJON = '1.5.0';
+const VERSJON = '1.6.0';
 
-/* Den lagra lista høyrer til éin brukar, ikkje til telefonen.
-   Loggar Ola ut og Kari inn på same telefon, ville Kari sett Olas liste
-   heilt til første henting var ferdig. Nøkkelen får difor brukar-id-en i
+/* Den lagrede lista hører til én bruker, ikke til telefonen.
+   Logger Ola ut og Kari inn på samme telefon, ville Kari sett Olas liste
+   helt til første henting var ferdig. Nøkkelen får derfor bruker-id-en i
    seg, og alt blir tømt ved utlogging. */
 const lagerNokkel = () => `hm-sider-${window.HM_NAV.brukarId() || 'ukjend'}`;
 const lagerTidNokkel = () => `${lagerNokkel()}-tid`;
 
-/* Dei gamle nøklane frå før innlogginga blir liggjande att på kvar telefon
-   som har hatt appen, med heile firmalista, på ei eining der ingen lenger
-   er innlogga. Ingen les dei. Vi ryddar dei bort ein gong. */
+/* De gamle nøklene fra før innloggingen blir liggende igjen på hver telefon
+   som har hatt appen, med hele firmalista, på en enhet der ingen lenger
+   er innlogget. Ingen leser dem. Vi rydder dem bort én gang. */
 function ryddGamleNoklar() {
   try {
     localStorage.removeItem('hm-sider');
     localStorage.removeItem('hm-sider-tid');
-  } catch { /* ingenting å gjere */ }
+  } catch { /* ingenting å gjøre */ }
 }
 
-// Sidelista blir henta over nett. Skulle nokon få skrive i henne, må dei
-// ikkje kunne sende folk til «javascript:», ei fil på telefonen, eller ei
-// ukryptert side som kan avlyttast. Difor slepp berre https gjennom.
+// Sidelista blir hentet over nett. Skulle noen få skrive i den, må de
+// ikke kunne sende folk til «javascript:», en fil på telefonen, eller en
+// ukryptert side som kan avlyttes. Derfor slipper bare https gjennom.
 function trygdAdresse(raa) {
   try {
     const u = new URL(String(raa));
@@ -53,17 +53,17 @@ function skrivLokalt(liste) {
   try {
     localStorage.setItem(lagerNokkel(), JSON.stringify(liste));
     localStorage.setItem(lagerTidNokkel(), new Date().toISOString());
-  } catch { /* full lagring – ikkje kritisk */ }
+  } catch { /* full lagring – ikke kritisk */ }
 }
 
 const sistHenta = () => localStorage.getItem(lagerTidNokkel());
 
-/* Ved utlogging skal ingenting av den førre brukaren stå att. */
+/* Ved utlogging skal ingenting av den forrige brukeren stå igjen. */
 function tomLokalt() {
   try {
     localStorage.removeItem(lagerNokkel());
     localStorage.removeItem(lagerTidNokkel());
-  } catch { /* ingenting å gjere */ }
+  } catch { /* ingenting å gjøre */ }
   sider = [];
 }
 
@@ -72,16 +72,16 @@ async function hentSider({ stille = false } = {}) {
   const knapp = $('btnOppdater');
   if (!stille) knapp.classList.add('gaar');
   try {
-    // Fersk kopi kvar gong – GitHub mellomlagrar elles fila i nokre minutt
+    // Fersk kopi hver gang – GitHub mellomlagrer ellers fila i noen minutter
     const url = `${SIDER_URL}?t=${Date.now()}`;
     const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`Fekk ${res.status} frå tenaren`);
+    if (!res.ok) throw new Error(`Fikk ${res.status} fra serveren`);
     const json = await res.json();
     const liste = (Array.isArray(json) ? json : json.pages) || [];
 
     sider = liste
-      // Sider merkte 'pc' i den felles lista høyrer ikkje heime på telefonen.
-      // Adresser som ikkje er https blir forkasta med ein gong.
+      // Sider merket 'pc' i den felles lista hører ikke hjemme på telefonen.
+      // Adresser som ikke er https blir forkastet med én gang.
       .filter((p) => p && p.name && trygdAdresse(p.url) && p.hidden !== true && p.plattform !== 'pc')
       .map((p) => ({
         id: String(p.id || p.name),
@@ -98,14 +98,14 @@ async function hentSider({ stille = false } = {}) {
     visStatus();
     return true;
   } catch (err) {
-    // Utan nett brukar vi den lagra lista i staden for å stå tomt
+    // Uten nett bruker vi den lagrede lista i stedet for å stå tomt
     const lagra = lesLokalt();
     if (lagra && lagra.length) {
       sider = lagra;
       teikn();
-      visStatus('Ikkje kontakt – viser lagra liste');
+      visStatus('Ikke kontakt – viser lagret liste');
     } else {
-      visTomt('Fekk ikkje henta sidene. Sjekk at du har nett.', true);
+      visTomt('Fikk ikke hentet sidene. Sjekk at du har nett.', true);
     }
     return false;
   } finally {
@@ -113,7 +113,7 @@ async function hentSider({ stille = false } = {}) {
   }
 }
 
-/* ---------- Teikn lista ---------- */
+/* ---------- Tegn lista ---------- */
 function fyllIkon(boks, side) {
   boks.innerHTML = '';
   boks.style.background = '';
@@ -121,7 +121,7 @@ function fyllIkon(boks, side) {
     const img = document.createElement('img');
     img.src = side.image;
     img.alt = '';
-    // Sviktar biletet, fell vi tilbake på bokstaven
+    // Svikter bildet, faller vi tilbake på bokstaven
     img.addEventListener('error', () => {
       boks.innerHTML = '';
       boks.style.background = side.color;
@@ -158,7 +158,7 @@ function teikn() {
   liste.innerHTML = '';
 
   if (!treff.length) {
-    visTomt(sok ? `Fann ingen sider som passar «${$('sok').value.trim()}».` : 'Ingen sider enno.');
+    visTomt(sok ? `Fant ingen sider som passer «${$('sok').value.trim()}».` : 'Ingen sider ennå.');
     return;
   }
   $('tomt').hidden = true;
@@ -198,7 +198,7 @@ function teikn() {
       pil.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>';
       rad.appendChild(pil);
 
-      // Kort trykk opnar sida, langt trykk viser detaljane
+      // Kort trykk åpner siden, langt trykk viser detaljene
       let lang = null;
       rad.addEventListener('pointerdown', () => {
         lang = setTimeout(() => { lang = 'gjort'; visArk(p); }, 500);
@@ -229,17 +229,17 @@ function visStatus(overstyr) {
   const nar = t
     ? new Date(t).toLocaleString('nb-NO', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
     : 'aldri';
-  $('status').textContent = overstyr || `${sider.length} sider · henta ${nar}`;
+  $('status').textContent = overstyr || `${sider.length} sider · hentet ${nar}`;
 }
 
-/* Domena appen kan vise i fullskjerm. Lista blir bygd frå sidelista ved kvar
-   opning, ikkje bakt inn i appen – difor får eit nytt system fullskjerm så
-   snart det serverer assetlinks.json, utan at nokon må installere på nytt.
+/* Domenene appen kan vise i fullskjerm. Lista blir bygd fra sidelista ved hver
+   åpning, ikke bakt inn i appen – derfor får et nytt system fullskjerm så
+   snart det serverer assetlinks.json, uten at noen må installere på nytt.
 
-   Alle blir sende med, ikkje berre den eine vi opnar. Elles mistar brukaren
-   fullskjerm i det han trykkjer seg frå eitt av våre system til eit anna.
-   Det kostar ingenting: Chrome hentar beviset først når han faktisk kjem til
-   eit domene. */
+   Alle blir sendt med, ikke bare den ene vi åpner. Ellers mister brukeren
+   fullskjerm i det han trykker seg fra ett av våre system til et annet.
+   Det koster ingenting: Chrome henter beviset først når han faktisk kommer til
+   et domene. */
 function klarerteOpphav() {
   const sett = new Set();
   for (const p of sider) {
@@ -247,29 +247,29 @@ function klarerteOpphav() {
     if (!trygg) continue;
     try {
       sett.add(new URL(trygg).origin);
-    } catch { /* hoppar over */ }
+    } catch { /* hopper over */ }
   }
   return [...sett];
 }
 
-/* ---------- Opne ei side ----------
-   Våre eigne system opnar seg i fullskjerm. Alt anna – og alt som ikkje har
-   bevist at det høyrer til appen – opnar seg i nettlesaren si eiga visning,
-   med adresselinje. Det er eit medvite val, ikkje ei teknisk naudsyn, og for
-   SmartDok og Tripletex er adresselinja noko vi vil ha. Sjå README. */
+/* ---------- Åpne en side ----------
+   Våre egne system åpner seg i fullskjerm. Alt annet – og alt som ikke har
+   bevist at det hører til appen – åpner seg i nettleserens egen visning,
+   med adresselinje. Det er et bevisst valg, ikke en teknisk nødvendighet, og
+   for SmartDok og Tripletex er adresselinja noe vi vil ha. Se README. */
 async function opneSide(side) {
   const url = trygdAdresse(side.url);
   if (!url) {
-    alert(`«${side.name}» har ei adresse appen ikkje kan opne. Berre https er tillate.`);
+    alert(`«${side.name}» har en adresse appen ikke kan åpne. Bare https er tillatt.`);
     return;
   }
   const cap = window.Capacitor;
 
   if (cap && cap.isNativePlatform && cap.isNativePlatform()) {
-    // Våre eigne system opnar seg i fullskjerm utan adresselinje, dersom
-    // domenet beviser at det høyrer til appen. Manglar beviset, gjer Chrome
-    // sjølv det same som linja under: ein vanleg Custom Tab. Difor er dette
-    // eit forsøk og ikkje eit val – vi treng ikkje vite kva som er sett opp.
+    // Våre egne system åpner seg i fullskjerm uten adresselinje, dersom
+    // domenet beviser at det hører til appen. Mangler beviset, gjør Chrome
+    // selv det samme som linja under: en vanlig Custom Tab. Derfor er dette
+    // et forsøk og ikke et valg – vi trenger ikke vite hva som er satt opp.
     try {
       const { Twa } = cap.Plugins || {};
       if (Twa && Twa.open) {
@@ -277,15 +277,15 @@ async function opneSide(side) {
         return;
       }
     } catch (err) {
-      // Ingen nettlesar med TWA-støtte. Custom Tabs under tek over.
-      console.warn('Fullskjerm ikkje tilgjengeleg:', err);
+      // Ingen nettleser med TWA-støtte. Custom Tabs under tar over.
+      console.warn('Fullskjerm ikke tilgjengelig:', err);
     }
 
-    // Custom Tabs på Android og SFSafariViewController på iPhone. Systema
-    // køyrer da i nettlesaren sitt eige rom, ikkje i ein WebView vi styrer,
-    // så vi ser aldri passorda. På Android blir økta delt med Chrome, så
-    // folk slepp å logge inn på nytt – det gjeld ikkje iPhone, der
-    // SFSafariViewController ikkje har delt økt med Safari sidan iOS 11.
+    // Custom Tabs på Android og SFSafariViewController på iPhone. Systemene
+    // kjører da i nettleserens eget rom, ikke i en WebView vi styrer,
+    // så vi ser aldri passordene. På Android blir økta delt med Chrome, så
+    // folk slipper å logge inn på nytt – det gjelder ikke iPhone, der
+    // SFSafariViewController ikke har delt økt med Safari siden iOS 11.
     try {
       const { Browser } = cap.Plugins || {};
       if (Browser && Browser.open) {
@@ -297,7 +297,7 @@ async function opneSide(side) {
         return;
       }
     } catch (err) {
-      console.error('Klarte ikkje opne i appen:', err);
+      console.error('Klarte ikke å åpne i appen:', err);
     }
   }
 
@@ -305,9 +305,9 @@ async function opneSide(side) {
 }
 
 /* ---------- Ny versjon ----------
-   Ein app som er installert frå ei fil kan ikkje oppdatere seg heilt av seg
-   sjølv slik Play Butikk gjer. Vi sjekkar difor kva som er nyaste versjon og
-   seier frå, så er det eitt trykk å hente ho. */
+   En app som er installert fra en fil kan ikke oppdatere seg helt av seg
+   selv slik Play Butikk gjør. Vi sjekker derfor hva som er nyeste versjon og
+   sier fra, så er det ett trykk å hente den. */
 const VERSJON_URL = 'versjon.json';
 const APK_FALLBACK =
   'https://github.com/thomashauge03/hauge-maskin-mobil/releases/latest';
@@ -318,7 +318,7 @@ const erNativ = () => {
 };
 const erAndroid = () => /android/i.test(navigator.userAgent);
 
-// 1.10.0 er nyare enn 1.9.0, så vi kan ikkje samanlikne som tekst
+// 1.10.0 er nyere enn 1.9.0, så vi kan ikke sammenligne som tekst
 function nyareEnn(a, b) {
   const x = String(a).split('.').map(Number);
   const y = String(b).split('.').map(Number);
@@ -339,7 +339,7 @@ function opneNedlasting(url) {
 }
 
 async function sjekkVersjon() {
-  // Berre den installerte Android-appen har noko å oppdatere
+  // Bare den installerte Android-appen har noe å oppdatere
   if (!erNativ()) return;
   try {
     const res = await fetch(`${VERSJON_URL}?t=${Date.now()}`, { cache: 'no-store' });
@@ -359,10 +359,10 @@ async function sjekkVersjon() {
     if (localStorage.getItem('hm-hoppa-versjon') === info.versjon) {
       $('oppdatering').hidden = true;
     }
-  } catch { /* utan nett er dette uinteressant */ }
+  } catch { /* uten nett er dette uinteressant */ }
 }
 
-// I nettlesaren på Android tilbyr vi den ekte appen i staden
+// I nettleseren på Android tilbyr vi den ekte appen i stedet
 async function tilbyInstallasjon() {
   if (erNativ() || !erAndroid()) return;
   if (window.matchMedia('(display-mode: standalone)').matches) return;
@@ -375,7 +375,7 @@ async function tilbyInstallasjon() {
       const info = await res.json();
       if (info.apk) apk = info.apk;
     }
-  } catch { /* brukar fallback */ }
+  } catch { /* bruker fallback */ }
 
   $('installer').hidden = false;
   $('installerLast').onclick = () => opneNedlasting(apk);
@@ -385,18 +385,18 @@ async function tilbyInstallasjon() {
   };
 }
 
-/* ---------- Detaljar ---------- */
+/* ---------- Detaljer ---------- */
 function visArk(side) {
   valdSide = side;
   fyllIkon($('arkIkon'), side);
   $('arkNamn').textContent = side.name;
   $('arkGruppe').textContent = side.group;
-  $('arkHjelp').textContent = side.help || 'Ingen forklaring er lagt inn for denne sida.';
+  $('arkHjelp').textContent = side.help || 'Ingen forklaring er lagt inn for denne siden.';
   $('arkAdresse').textContent = side.url;
   $('ark').hidden = false;
 }
 
-/* ---------- Hendingar ---------- */
+/* ---------- Hendelser ---------- */
 $('sok').addEventListener('input', teikn);
 $('btnOppdater').addEventListener('click', () => hentSider());
 $('btnProvIgjen').addEventListener('click', () => hentSider());
@@ -417,8 +417,8 @@ $('btnOm').addEventListener('click', () => {
     : 'aldri';
   $('omBrukar').textContent = meg || '–';
   $('omTekst').textContent =
-    'Alle systema til Hauge Maskin samla på éin stad. Lista blir henta automatisk, ' +
-    'så nye sider dukkar opp av seg sjølv.';
+    'Alle systemene til Hauge Maskin samlet på ett sted. Lista blir hentet automatisk, ' +
+    'så nye sider dukker opp av seg selv.';
   $('om').hidden = false;
 });
 $('omLukk').addEventListener('click', () => { $('om').hidden = true; });
@@ -444,8 +444,8 @@ function visPortFeil(id, melding) {
   p.hidden = !melding;
 }
 
-/* Kven slepp inn, og kva skjerm skal dei sjå?
-   Returnerer true berre når lista skal visast. */
+/* Hvem slipper inn, og hvilken skjerm skal de se?
+   Returnerer true bare når lista skal vises. */
 async function avgjerPort() {
   if (!window.HM_NAV.erInnlogga()) {
     visPortDel('portLogin');
@@ -462,10 +462,10 @@ async function avgjerPort() {
       return true;
 
     case 'utanNett':
-      /* Utan nett, men med ei lagra liste frå før: slepp inn på det vi har.
-         Å stengje nokon ute av appen fordi dei står utan dekning ville vore
-         å gjere den eine tingen appen finst for – å vere til stades ute på
-         ein jobb – umogleg. */
+      /* Uten nett, men med en lagret liste fra før: slipp inn på det vi har.
+         Å stenge noen ute av appen fordi de står uten dekning ville vært
+         å gjøre den ene tingen appen finnes for – å være til stede ute på
+         en jobb – umulig. */
       if ((lesLokalt() || []).length) {
         $('port').hidden = true;
         return true;
@@ -491,7 +491,7 @@ function startApp() {
     teikn();
     visStatus();
   } else {
-    visTomt('Hentar sidene…');
+    visTomt('Henter sidene…');
   }
   hentSider({ stille: !!(lagra && lagra.length) });
   sjekkVersjon();
@@ -502,7 +502,7 @@ async function opneEllerVis() {
   if (await avgjerPort()) startApp();
 }
 
-/* ---------- Hendingar i porten ---------- */
+/* ---------- Hendelser i porten ---------- */
 $('tilNy').addEventListener('click', () => {
   visPortFeil('nyFeil', '');
   visPortDel('portNy');
@@ -548,9 +548,9 @@ $('skjemaNy').addEventListener('submit', async (e) => {
 
   if (!svar.ok) { visPortFeil('nyFeil', svar.feil); return; }
 
-  /* Er e-postbekreftelse slått på i navet, gir registreringa inga økt. Da
-     loggar vi inn med det same – brukaren har nettopp skrive passordet, og
-     skal ikkje måtte gjere det to gonger for å kome til venteskjermen. */
+  /* Er e-postbekreftelse slått på i navet, gir registreringen ingen økt. Da
+     logger vi inn med det samme – brukeren har nettopp skrevet passordet, og
+     skal ikke måtte gjøre det to ganger for å komme til venteskjermen. */
   if (!svar.medOkt) await window.HM_NAV.loggInn(epost, passord);
 
   $('nyPassord').value = '';
@@ -577,18 +577,18 @@ $('omLoggUt').addEventListener('click', loggUtOgTilbake);
   ryddGamleNoklar();
   opneEllerVis();
 
-  /* Når appen kjem fram igjen: står porten open, sjekkar vi om nokon har
-     godkjent oss i mellomtida. Elles hentar vi lista på nytt. */
+  /* Når appen kommer fram igjen: står porten åpen, sjekker vi om noen har
+     godkjent oss i mellomtiden. Ellers henter vi lista på nytt. */
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) return;
     if (!$('port').hidden) opneEllerVis();
     else hentSider({ stille: true });
   });
 
-  // Gjer appen installerbar frå nettlesaren. Inne i den native appen har
-  // Capacitor si eiga handtering, så da hoppar vi over.
+  // Gjør appen installerbar fra nettleseren. Inne i den native appen har
+  // Capacitor sin egen håndtering, så da hopper vi over.
   const nativ = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
   if (!nativ && 'serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => { /* fungerer utan */ });
+    navigator.serviceWorker.register('sw.js').catch(() => { /* fungerer uten */ });
   }
 })();

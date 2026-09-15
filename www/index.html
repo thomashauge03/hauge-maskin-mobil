@@ -14,16 +14,16 @@
 </head>
 <body>
 
-  <!-- Porten. Ligg over alt til vi veit kven som held telefonen.
-       Han er synleg frå start og blir skrudd av når økta er i orden –
-       motsett ville lista blinka fram eit augeblikk før innlogginga. -->
+  <!-- Porten. Ligger over alt til vi vet hvem som holder telefonen.
+       Den er synlig fra start og blir skrudd av når økten er i orden –
+       motsatt ville listen blinket fram et øyeblikk før innloggingen. -->
   <div id="port" class="port">
     <div class="port-innhald">
       <img class="port-logo" src="assets/logo-trim.png" alt="Hauge Maskin" />
 
-      <!-- Startar her medan vi sjekkar om vi alt er innlogga -->
+      <!-- Starter her mens vi sjekker om vi allerede er innlogget -->
       <section id="portLastar" class="port-del">
-        <p class="port-tekst">Eit augeblikk…</p>
+        <p class="port-tekst">Et øyeblikk…</p>
       </section>
 
       <section id="portLogin" class="port-del" hidden>
@@ -36,52 +36,52 @@
           <p id="loginFeil" class="port-feil" hidden></p>
           <button type="submit" class="knapp knapp-stor">Logg inn</button>
         </form>
-        <button id="tilNy" class="tekstknapp midtstilt">Eg har ikkje konto</button>
+        <button id="tilNy" class="tekstknapp midtstilt">Jeg har ikke konto</button>
       </section>
 
       <section id="portNy" class="port-del" hidden>
         <h1 class="port-tittel">Be om tilgang</h1>
         <p class="port-tekst">
-          Du kjem inn når nokon har godkjent deg.
+          Du kommer inn når noen har godkjent deg.
         </p>
         <form id="skjemaNy" class="port-skjema">
-          <input id="nyNavn" type="text" autocomplete="name" placeholder="Namn" required />
+          <input id="nyNavn" type="text" autocomplete="name" placeholder="Navn" required />
           <input id="nyEpost" type="email" inputmode="email" autocomplete="username"
                  placeholder="E-post" required autocapitalize="none" />
           <input id="nyPassord" type="password" autocomplete="new-password"
-                 placeholder="Passord – minst seks teikn" required minlength="6" />
+                 placeholder="Passord – minst seks tegn" required minlength="6" />
           <p id="nyFeil" class="port-feil" hidden></p>
           <button type="submit" class="knapp knapp-stor">Send</button>
         </form>
-        <button id="tilLogin" class="tekstknapp midtstilt">Eg har konto</button>
+        <button id="tilLogin" class="tekstknapp midtstilt">Jeg har konto</button>
       </section>
 
       <section id="portVent" class="port-del" hidden>
-        <h1 class="port-tittel">Ventar på godkjenning</h1>
+        <h1 class="port-tittel">Venter på godkjenning</h1>
         <p class="port-tekst">
-          Førespurnaden er sendt. Du får tilgang så snart nokon har sagt ja.
-          Prøv igjen litt seinare.
+          Forespørselen er sendt. Du får tilgang så snart noen har sagt ja.
+          Prøv igjen litt senere.
         </p>
         <button id="ventSjekk" class="knapp knapp-stor">Sjekk på nytt</button>
         <button class="tekstknapp midtstilt portUt">Logg ut</button>
       </section>
 
       <section id="portSperra" class="port-del" hidden>
-        <h1 class="port-tittel">Du har ikkje tilgang</h1>
+        <h1 class="port-tittel">Du har ikke tilgang</h1>
         <p class="port-tekst">
-          Kontoen din er stengd. Ta kontakt med den som styrer tilgangane om
-          dette ikkje stemmer.
+          Kontoen din er stengt. Ta kontakt med den som styrer tilgangene om
+          dette ikke stemmer.
         </p>
         <button class="tekstknapp midtstilt portUt">Logg ut</button>
       </section>
 
-      <!-- Registreringa blei aldri til ein person. Brukaren kan ikkje gjere
-           noko med det sjølv, så skjermen seier kva som må skje. -->
+      <!-- Registreringen ble aldri til en person. Brukeren kan ikke gjøre
+           noe med det selv, så skjermen sier hva som må skje. -->
       <section id="portUtanPerson" class="port-del" hidden>
-        <h1 class="port-tittel">Noko gjekk gale</h1>
+        <h1 class="port-tittel">Noe gikk galt</h1>
         <p class="port-tekst">
-          Kontoen blei oppretta, men registreringa kom ikkje heilt fram. Sei
-          frå til den som styrer tilgangane – dei ser dette og kan rette det.
+          Kontoen ble opprettet, men registreringen kom ikke helt fram. Si
+          fra til den som styrer tilgangene – de ser dette og kan rette det.
         </p>
         <button class="tekstknapp midtstilt portUt">Logg ut</button>
       </section>
@@ -89,7 +89,7 @@
       <section id="portUtanNett" class="port-del" hidden>
         <h1 class="port-tittel">Ingen kontakt</h1>
         <p class="port-tekst">
-          Fekk ikkje snakka med Hauge Maskin. Sjekk at du har nett.
+          Fikk ikke snakket med Hauge Maskin. Sjekk at du har nett.
         </p>
         <button id="nettSjekk" class="knapp knapp-stor">Prøv igjen</button>
       </section>
@@ -106,26 +106,26 @@
     </button>
   </header>
 
-  <!-- Ny versjon tilgjengeleg -->
+  <!-- Ny versjon tilgjengelig -->
   <div id="oppdatering" class="oppdatering" hidden>
     <div class="oppdatering-tekst">
       <strong id="oppdateringTittel"></strong>
       <span id="oppdateringDetalj"></span>
     </div>
     <button id="oppdateringLast" class="knapp">Last ned</button>
-    <button id="oppdateringLukk" class="ikonknapp liten" aria-label="Ikkje no">
+    <button id="oppdateringLukk" class="ikonknapp liten" aria-label="Ikke nå">
       <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
   </div>
 
-  <!-- Tilbod om å installere appen, vist i nettlesaren på Android -->
+  <!-- Tilbud om å installere appen, vist i nettleseren på Android -->
   <div id="installer" class="oppdatering" hidden>
     <div class="oppdatering-tekst">
       <strong>Installer appen</strong>
-      <span>Får du eit ikon på skjermen og eiga innlogging</span>
+      <span>Får du et ikon på skjermen og egen innlogging</span>
     </div>
     <button id="installerLast" class="knapp">Last ned</button>
-    <button id="installerLukk" class="ikonknapp liten" aria-label="Ikkje no">
+    <button id="installerLukk" class="ikonknapp liten" aria-label="Ikke nå">
       <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
   </div>
@@ -139,7 +139,7 @@
 
   <div id="tomt" class="tomt" hidden>
     <img src="assets/logo-trim.png" alt="" />
-    <p id="tomtTekst">Hentar sidene…</p>
+    <p id="tomtTekst">Henter sidene…</p>
     <button id="btnProvIgjen" class="knapp" hidden>Prøv igjen</button>
   </div>
 
@@ -148,7 +148,7 @@
     <button id="btnOm" class="tekstknapp">Om</button>
   </footer>
 
-  <!-- Detaljar om ei side -->
+  <!-- Detaljer om en side -->
   <div id="ark" class="ark-bakgrunn" hidden>
     <div class="ark">
       <div class="ark-drag"></div>
@@ -161,7 +161,7 @@
       </div>
       <p id="arkHjelp" class="ark-hjelp"></p>
       <div class="ark-adresse" id="arkAdresse"></div>
-      <button id="arkOpne" class="knapp knapp-stor">Opne</button>
+      <button id="arkOpne" class="knapp knapp-stor">Åpne</button>
       <button id="arkLukk" class="tekstknapp midtstilt">Lukk</button>
     </div>
   </div>
@@ -174,11 +174,11 @@
       <p class="ark-hjelp" id="omTekst"></p>
       <div class="om-rad"><span>Versjon</span><b id="omVersjon">–</b></div>
       <div class="om-rad"><span>Felles sider</span><b id="omSider">–</b></div>
-      <div class="om-rad"><span>Sist henta</span><b id="omSynk">–</b></div>
+      <div class="om-rad"><span>Sist hentet</span><b id="omSynk">–</b></div>
       <a class="om-rad" href="personvern.html" style="text-decoration:none">
         <span>Personvern</span><b>Les →</b>
       </a>
-      <div class="om-rad"><span>Innlogga som</span><b id="omBrukar">–</b></div>
+      <div class="om-rad"><span>Innlogget som</span><b id="omBrukar">–</b></div>
       <button id="omLukk" class="knapp knapp-stor">Lukk</button>
       <button id="omLoggUt" class="tekstknapp midtstilt">Logg ut</button>
     </div>

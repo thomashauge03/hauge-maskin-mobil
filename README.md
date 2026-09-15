@@ -1,103 +1,103 @@
 # Hauge Maskin – mobil
 
-Alle systema til Hauge Maskin samla på éin stad, på telefonen. Same felles
-sideliste som skrivebordsappen: du legg til ei side **éin** stad, og både PC,
-Android og iPhone får ho.
+Alle systemene til Hauge Maskin samlet på ett sted, på telefonen. Samme felles
+sideliste som skrivebordsappen: du legger til en side **ett** sted, og både PC,
+Android og iPhone får den.
 
 ## Slik får du appen
 
-Opne denne på telefonen – ho viser rett framgangsmåte for telefonen du har:
+Åpne denne på telefonen – den viser riktig framgangsmåte for telefonen du har:
 
 **https://thomashauge03.github.io/hauge-maskin-mobil/last-ned.html**
 
 ### Android
 
-Trykk **Last ned appen** på sida over, og opne fila når ho er ferdig.
-Telefonen spør om lov til å installere frå ei ukjend kjelde første gongen.
-Det er fordi appen ikkje ligg i Play Butikk – trykk **Tillat** og hald fram.
+Trykk **Last ned appen** på siden over, og åpne filen når den er ferdig.
+Telefonen spør om lov til å installere fra en ukjent kilde første gangen.
+Det er fordi appen ikke ligger i Play Butikk – trykk **Tillat** og fortsett.
 
-Appen seier sjølv frå når det kjem ein ny versjon: du får eit raudt felt
-øvst med **Last ned**. Han sjekkar `versjon.json` på nettsida ved kvar
+Appen sier selv fra når det kommer en ny versjon: du får et rødt felt
+øverst med **Last ned**. Den sjekker `versjon.json` på nettsiden ved hver
 oppstart.
 
 ### iPhone
 
-Opne denne adressa i **Safari**:
+Åpne denne adressen i **Safari**:
 **https://thomashauge03.github.io/hauge-maskin-mobil/**
 
 Trykk **Del** (firkanten med pil opp) → **Legg til på Hjem-skjerm**.
-Du får eit HM-ikon på skjermen som opnar appen i fullskjerm, akkurat som ein
-vanleg app. Ingen App Store, ingen konto, ingenting som går ut på dato.
+Du får et HM-ikon på skjermen som åpner appen i fullskjerm, akkurat som en
+vanlig app. Ingen App Store, ingen konto, ingenting som går ut på dato.
 
-Same adressa fungerer òg på Android om du ikkje vil installere APK-en.
+Samme adresse fungerer også på Android om du ikke vil installere APK-en.
 
-## Kva appen gjer
+## Hva appen gjør
 
-- Hentar den felles sidelista frå `sider.json` i
-  [hauge-maskin-app](https://github.com/thomashauge03/hauge-maskin-app) – same
-  fil som skrivebordsappen brukar.
+- Henter den felles sidelisten fra `sider.json` i
+  [hauge-maskin-app](https://github.com/thomashauge03/hauge-maskin-app) – samme
+  fil som skrivebordsappen bruker.
 - Viser sidene i grupper, med ikon og forklaring, og lar deg søke.
-- **Trykk** på ei side for å opne ho. **Hald inne** for å sjå kva ho er til.
-- Lista blir lagra på telefonen, så appen virkar òg utan dekning. Han hentar
-  ny liste når du opnar appen igjen.
+- **Trykk** på en side for å åpne den. **Hold inne** for å se hva den er til.
+- Listen blir lagret på telefonen, så appen virker også uten dekning. Den henter
+  ny liste når du åpner appen igjen.
 
-## Kvifor systema opnar seg i nettlesaren
+## Hvorfor systemene åpner seg i nettleseren
 
-Appen opnar systema i nettlesaren si eiga visning – Custom Tabs på Android,
-Safari på iPhone – i staden for i ein WebView appen styrer sjølv. Det er eit
-medvite val:
+Appen åpner systemene i nettleserens egen visning – Custom Tabs på Android,
+Safari på iPhone – i stedet for i en WebView appen styrer selv. Det er et
+bevisst valg:
 
-- **Appen ser aldri passorda.** Det betyr mest for SmartDok og Tripletex, som
-  ikkje er våre system og der folk skriv inn passord vi ikkje har noko med.
-- **På Android blir økta delt med Chrome**, så folk slepp å logge inn på nytt.
-  Dette gjeld ikkje iPhone: SFSafariViewController har ikkje hatt delt økt med
-  Safari sidan iOS 11.
-- **Vi held oss unna gråsona** rundt Play sin policy for appar som viser andre
-  sine nettstader.
+- **Appen ser aldri passordene.** Det betyr mest for SmartDok og Tripletex, som
+  ikke er våre systemer og der folk skriver inn passord vi ikke har noe med.
+- **På Android blir økten delt med Chrome**, så folk slipper å logge inn på nytt.
+  Dette gjelder ikke iPhone: SFSafariViewController har ikke hatt delt økt med
+  Safari siden iOS 11.
+- **Vi holder oss unna gråsonen** rundt Play-policyen for apper som viser andres
+  nettsteder.
 
-Prisen er adresselinja øvst, og ho kan ikkje skruast av. Det er med vilje:
-utan henne kunne ein app teikne sitt eige innloggingsskjema oppå og stele
+Prisen er adresselinjen øverst, og den kan ikke skrus av. Det er med vilje:
+uten den kunne en app tegne sitt eget innloggingsskjema oppå og stjele
 passordet. Custom Tabs viser alltid domenet.
 
-Ei **ramme** inni appen er ein annan sak, og er utelukka for to av systema:
+En **ramme** inni appen er en annen sak, og er utelukket for to av systemene:
 Tilbudssystem (`frame-ancestors 'none'` og `X-Frame-Options: DENY`) og Utleie
-(`DENY`). Dei andre set ingen slik header, men ramme er uaktuelt uansett av
-grunnane over.
+(`DENY`). De andre setter ingen slik header, men ramme er uaktuelt uansett av
+grunnene over.
 
-## Bygge sjølv
+## Bygge selv
 
 ```bash
 npm install
 npx cap sync
 ```
 
-**Android** (krev JDK 17+ – Android Studio har ein innebygd i `jbr`):
+**Android** (krever JDK 17+ – Android Studio har en innebygd i `jbr`):
 
 ```bash
 cd android && ./gradlew assembleRelease
 ```
 
-APK-en hamnar i `android/app/build/outputs/apk/release/`.
+APK-en havner i `android/app/build/outputs/apk/release/`.
 
-Signeringsnøkkelen ligg i `signering/` og er **ikkje** i repoet. Den må takast
-vare på – utan han kan ingen lage oppdateringar som telefonane godtek som same
+Signeringsnøkkelen ligger i `signering/` og er **ikke** i repoet. Den må tas
+vare på – uten den kan ingen lage oppdateringer som telefonene godtar som samme
 app, og alle må avinstallere og installere på nytt.
 
-**iOS** kan ikkje byggjast på Windows. Sjå `.github/workflows/ios.yml` – han
-byggjer appen gratis på ein Mac hjå GitHub, men å få han **på** ein iPhone
-krev Apple Developer Program (99 USD/år). Sjå avsnittet under.
+**iOS** kan ikke bygges på Windows. Se `.github/workflows/ios.yml` – den
+bygger appen gratis på en Mac hos GitHub, men å få den **på** en iPhone
+krever Apple Developer Program (99 USD/år). Se avsnittet under.
 
 ## Om iPhone
 
-Å byggje ein iOS-app er gratis. Å få han på telefonane er det ikkje:
+Å bygge en iOS-app er gratis. Å få den på telefonene er det ikke:
 
-| Veg | Kostnad | Hake |
+| Vei | Kostnad | Hake |
 | --- | --- | --- |
-| **Heim-skjerm-app (PWA)** | 0 kr | Ingen. Dette er det som er sett opp. |
-| Apple Developer Program | ~950 kr/år | Ekte app via TestFlight. Bygg må fornyast kvar 90. dag. |
-| Gratis Apple ID | 0 kr | Ubrukeleg: 3 einingar, 3 appar, appen sluttar å virke etter 7 dagar. |
-| Alternative app-butikkar | 0 kr | Gjeld berre EU. Noreg er EØS – det gjeld ikkje her. |
+| **Hjem-skjerm-app (PWA)** | 0 kr | Ingen. Dette er det som er satt opp. |
+| Apple Developer Program | ~950 kr/år | Ekte app via TestFlight. Bygg må fornyes hver 90. dag. |
+| Gratis Apple ID | 0 kr | Ubrukelig: 3 enheter, 3 apper, appen slutter å virke etter 7 dager. |
+| Alternative app-butikker | 0 kr | Gjelder bare EU. Norge er EØS – det gjelder ikke her. |
 
-Heim-skjerm-appen gir HM-ikon, fullskjerm og same sideliste. Skilnaden mot ein
-ekte app er at systema opnar seg i Safari sitt vindauge i staden for inne i
+Hjem-skjerm-appen gir HM-ikon, fullskjerm og samme sideliste. Forskjellen mot en
+ekte app er at systemene åpner seg i Safaris vindu i stedet for inne i
 appen.

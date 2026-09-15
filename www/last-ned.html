@@ -34,7 +34,7 @@
     <div class="helt">
       <img src="assets/logo-trim.png" alt="Hauge Maskin" />
       <h1>Hauge Maskin på telefonen</h1>
-      <p>Alle systema samla på éin stad. Vel telefonen din under.</p>
+      <p>Alle systemene samlet på ett sted. Velg telefonen din under.</p>
     </div>
 
     <div class="kort" id="kortAndroid">
@@ -42,12 +42,12 @@
       <h2>Installer appen</h2>
       <ol>
         <li>Trykk <b>Last ned appen</b> under</li>
-        <li>Opne fila når ho er ferdig nedlasta</li>
+        <li>Åpne filen når den er ferdig nedlastet</li>
         <li>Android spør om lov – trykk <b>Tillat</b>, så <b>Installer</b></li>
       </ol>
       <a class="knapp" id="lenkeApk" href="https://github.com/thomashauge03/hauge-maskin-mobil/releases/latest">Last ned appen</a>
       <p class="merknad">
-        Appen seier sjølv frå når det kjem ein ny versjon.
+        Appen sier selv fra når det kommer en ny versjon.
       </p>
     </div>
 
@@ -55,24 +55,24 @@
       <div class="kva">iPhone</div>
       <h2>Legg til på Hjem-skjerm</h2>
       <ol>
-        <li>Opne denne sida i <b>Safari</b></li>
+        <li>Åpne denne siden i <b>Safari</b></li>
         <li>Trykk <b>Del</b> – firkanten med pil opp</li>
-        <li>Vel <b>Legg til på Hjem-skjerm</b></li>
+        <li>Velg <b>Legg til på Hjem-skjerm</b></li>
       </ol>
-      <a class="knapp" href="./">Opne appen</a>
+      <a class="knapp" href="./">Åpne appen</a>
       <p class="merknad">
-        Du får eit HM-ikon på skjermen som opnar appen i fullskjerm. Den
-        oppdaterer seg sjølv.
+        Du får et HM-ikon på skjermen som åpner appen i fullskjerm. Den
+        oppdaterer seg selv.
       </p>
     </div>
 
     <p class="merknad" style="text-align:center">
-      Same sideliste som PC-appen. Nye system dukkar opp av seg sjølv.
+      Samme sideliste som PC-appen. Nye systemer dukker opp av seg selv.
     </p>
   </div>
 
   <script>
-    // Framhev kortet som gjeld telefonen du står på
+    // Fremhev kortet som gjelder telefonen du står på
     const android = /android/i.test(navigator.userAgent);
     const iphone = /iphone|ipad|ipod/i.test(navigator.userAgent);
     if (android) document.getElementById('kortAndroid').classList.add('denne');
@@ -87,11 +87,11 @@
                       document.getElementById('kortAndroid'));
     }
 
-    // Peik rett på den nyaste APK-en
+    // Pek rett på den nyeste APK-en
     fetch('versjon.json?t=' + Date.now(), { cache: 'no-store' })
       .then((r) => r.json())
       .then((info) => { if (info.apk) document.getElementById('lenkeApk').href = info.apk; })
-      .catch(() => { /* lenka peikar alt på siste utgjeving */ });
+      .catch(() => { /* lenken peker allerede på siste utgivelse */ });
   </script>
 </body>
 </html>
