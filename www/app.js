@@ -4,7 +4,7 @@
 
 const SIDER_URL =
   'https://raw.githubusercontent.com/thomashauge03/hauge-maskin-app/main/sider.json';
-const VERSJON = '1.6.0';
+const VERSJON = '1.7.0';
 
 /* Den lagrede lista hører til én bruker, ikke til telefonen.
    Logger Ola ut og Kari inn på samme telefon, ville Kari sett Olas liste
@@ -67,6 +67,15 @@ function tomLokalt() {
   sider = [];
 }
 
+/* Tar bort sidene jeg ikke skal se.
+   En side som ikke er nevnt i svaret fra navet er standard, og skal vises.
+   Derfor `!== false` og ikke `=== true` – fraværet av en rad betyr ja. */
+function filtrerEtterTilgang(liste, val) {
+  if (!Array.isArray(val) || !val.length) return liste;
+  const avvik = new Map(val.map((v) => [String(v.side_id), v.syn]));
+  return liste.filter((p) => avvik.get(p.id) !== false);
+}
+
 /* ---------- Hent lista ---------- */
 async function hentSider({ stille = false } = {}) {
   const knapp = $('btnOppdater');
@@ -79,7 +88,7 @@ async function hentSider({ stille = false } = {}) {
     const json = await res.json();
     const liste = (Array.isArray(json) ? json : json.pages) || [];
 
-    sider = liste
+    const alle = liste
       // Sider merket 'pc' i den felles lista hører ikke hjemme på telefonen.
       // Adresser som ikke er https blir forkastet med én gang.
       .filter((p) => p && p.name && trygdAdresse(p.url) && p.hidden !== true && p.plattform !== 'pc')
@@ -93,6 +102,22 @@ async function hentSider({ stille = false } = {}) {
         help: p.help ? String(p.help) : ''
       }));
 
+    /* Lista over er den samme for alle. Navet sier hvor jeg avviker.
+       Får vi ikke svar, lagrer vi ingenting – å skrive en ufiltrert liste
+       til telefonen ville vist for mye ved neste oppstart, og da uten at
+       noe nett kunne rette det opp igjen. */
+    const val = await window.HM_NAV.mineSideval();
+    if (val === null) {
+      const lagra = lesLokalt();
+      if (lagra && lagra.length) {
+        sider = lagra;
+        teikn();
+        visStatus('Viser lagret liste');
+        return false;
+      }
+    }
+
+    sider = filtrerEtterTilgang(alle, val);
     skrivLokalt(sider);
     teikn();
     visStatus();

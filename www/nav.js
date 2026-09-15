@@ -227,11 +227,32 @@ async function minStatus() {
   return { tilstand: 'ventar', navn: rad.navn };
 }
 
+/* ---------- Hvilke sider er mine? ----------
+   Appen har sidelista fra sider.json allerede, og den lista er den samme for
+   alle. Det eneste navet trenger å svare på er hvor JEG avviker fra den.
+
+   Én rad per side som er annerledes for meg:
+     syn = false  →  skjul denne
+     syn = true   →  vis den likevel
+   En side som ikke er nevnt er standard, og skal vises.
+
+   At sidene ikke ligger i navet er med vilje: sider.json er fortsatt fasit,
+   og skrivebordsappen er fortsatt stedet man redigerer dem. Se migrasjon
+   0015 for hvorfor. */
+async function mineSideval() {
+  const { ok, json } = await medInnlogging('/rest/v1/mine_sideval?select=side_id,syn');
+  // null betyr «fikk ikke svar», ikke «ingen avvik». Den som kaller må
+  // skille dem – ellers ville et nettverksglipp sett ut som full tilgang.
+  if (!ok || !Array.isArray(json)) return null;
+  return json;
+}
+
 window.HM_NAV = {
   registrer,
   loggInn,
   loggUt,
   minStatus,
+  mineSideval,
   brukarId,
   erInnlogga,
   medInnlogging
