@@ -55,13 +55,22 @@ Ni ligg på Vercel, der du eig repoet og berre skal kopiere fila:
 | Etikett lager | `etikett.techauge.no` |
 | Qr Kode | `qr.techauge.no` |
 
-To ligg på Lovable, bak Cloudflare. Om `public/`-mappa kjem gjennom der, er ikkje
-prøvd – éin deploy gir svaret:
+Alle ni er lagde inn og verifiserte: dei svarar `200 application/json`.
 
-| Side | Domene |
-| --- | --- |
-| Hauge Maskin – heimeside | `hm-web-craft.lovable.app` |
-| Smartdok → PDF | `smartdok-to-pdf.lovable.app` |
+To ligg på Lovable, og dei **virkar ikkje**:
+
+| Side | Domene | Status |
+| --- | --- | --- |
+| Hauge Maskin – heimeside | `hm-web-craft.lovable.app` | 404 |
+| Smartdok → PDF | `smartdok-to-pdf.lovable.app` | 404 |
+
+Fila er lagd i `public/.well-known/` og pusha til GitHub i begge repoa, men
+nettstadene svarar framleis 404. **Lovable deployer ikkje frå GitHub-push** –
+repoet er ei speiling, ikkje kjelda. Fila ligg i repoet og kjem aldri ut.
+
+To vegar vidare, ingen av dei hastar: publiser frå Lovable sitt eige
+grensesnitt, eller flytt dei to prosjekta til Vercel som dei ni andre. Til det
+er gjort, opnar dei seg i Custom Tab med adresselinje – altså som før.
 
 **Tre sider kan aldri få fullskjerm**, og det er rett at dei ikkje får det:
 
