@@ -1,6 +1,6 @@
 {
   "_om": "Nyeste versjon av mobilappen. Appen sjekker denne fila ved oppstart og sier fra når det finnes noe nytt. Blir oppdatert når en ny versjon blir bygd.",
-  "versjon": "1.13.0",
-  "apk": "https://github.com/thomashauge03/hauge-maskin-mobil/releases/latest/download/Hauge-Maskin-1.13.0.apk",
-  "endringar": "Hele animasjonen spilles naa ferdig foer sida aapner seg, og nettleseren varmes opp i bakgrunnen mens den gaar."
+  "versjon": "1.13.1",
+  "apk": "https://github.com/thomashauge03/hauge-maskin-mobil/releases/latest/download/Hauge-Maskin-1.13.1.apk",
+  "endringar": "Animasjonen naar du aapner en side varer lenger - 2,3 sekund mot 1,6. Da rekker navnet under aa skrive seg ordentlig ut."
 }

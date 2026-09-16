@@ -4,7 +4,7 @@
 
 const SIDER_URL =
   'https://raw.githubusercontent.com/thomashauge03/hauge-maskin-app/main/sider.json';
-const VERSJON = '1.13.0';
+const VERSJON = '1.13.1';
 
 /* Den lagrede lista hører til én bruker, ikke til telefonen.
    Logger Ola ut og Kari inn på samme telefon, ville Kari sett Olas liste
@@ -324,10 +324,16 @@ function visSideFilm(side) {
      Her stod adressen en kort stund, men et domene er ikke det vi kaller
      sida. Du trykket på «Grus / transportregistrering», og da er det det
      du skal se mens den åpner seg. */
+  /* 1,7 gir ~2,3 sekund mot appens 3,9. Stod på 2,4 og ~1,6 sekund, og da
+     rakk ikke navnet under å skrive seg ordentlig ut – hele koreografien
+     var presset ned i 0,43 av lengden sin.
+     Lengden har en bivirkning som ikke er pynt: nettleseren varmes opp i
+     dette vinduet, så et par hundre millisekund til her er et par hundre
+     millisekund mindre venting når Chrome faktisk kommer. */
   return window.HM_LASTAR.lag(document.body, {
     tittel: side.name,
     band: (side.group || '').toUpperCase(),
-    fart: 2.4
+    fart: 1.7
   }).start();
 }
 
