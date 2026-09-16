@@ -259,10 +259,12 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
    og det siste som slipper taket. Se lastar.js for koreografien. */
 .lastar {
   position: fixed; inset: 0; z-index: 200;
-  background: #0a0a0c;
+  /* Selve elementet er gjennomsiktig. Bakgrunnen ligger i .lastar-grunn,
+     så den kan forsvinne sammen med innholdet mens lukkeren blir
+     stående – lå fargen her, ville skjermen vært svart til siste bilde. */
+  background: transparent;
   overflow: hidden;
   display: flex; align-items: center; justify-content: center;
-  transition: opacity .5s ease, transform .5s cubic-bezier(.4, 0, .9, .3);
   /* Takten. 1 er full lengde, som ved oppstart av appen. Å åpne en side
      setter den lavere, og da krymper hele koreografien i takt med
      3D-sekvensen i stedet for å gli fra den. */
@@ -429,12 +431,71 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 }
 .lastar-seint .lastar-steg { height: 16px; opacity: 1; }
 
-/* Utgangen: skjermen skyves mot deg og slipper. */
-.lastar-ut { opacity: 0; transform: scale(1.06); pointer-events: none; }
+.lastar-grunn { position: absolute; inset: 0; background: #0a0a0c; }
+
+/* ---------- Lukkeren ----------
+   Utgangen var en fade. Nå feier tre plater over skjermen i merkets egen
+   vinkel – den samme −12° som bransjebåndet – bytter det som ligger under
+   mens de dekker, og feier videre ut.
+
+   Hver plate har rød forkant. Det er den som leser som fart: en flate som
+   bare glir er en flate, en flate med en lysende kant er noe som beveger
+   seg. Og rødt er merkets signal, ikke pynt.
+
+   Tre plater og ikke én, fordi én plate i denne vinkelen må være enormt
+   bred for å dekke skjermen, og da blir sveipet tregt uansett hvor fort
+   den går. Tre som er forskjøvet dekker like godt og leser som mekanikk. */
+.lastar-lukkar {
+  position: absolute; inset: 0; z-index: 30;
+  pointer-events: none; overflow: hidden;
+}
+.lastar-lukkar i {
+  position: absolute; top: -14%; bottom: -14%;
+  width: 46%;
+  /* Gradienten gjør at platen ikke er én flat tone. Den er billig – én
+     gradient som bare blir komponert – og den gir kanten noe å skille seg
+     fra, slik at sveipet leser som volum og ikke som en firkant. */
+  background: linear-gradient(100deg, #0b0b0f 0%, #16161c 72%, #1c1c24 100%);
+  transform: skewX(-12deg) translate3d(-210%, 0, 0);
+}
+.lastar-lukkar i::after {
+  content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 4px;
+  background: var(--raud);
+}
+.lastar-lukkar i:nth-child(1) { left: -8%; }
+.lastar-lukkar i:nth-child(2) { left: 28%; }
+.lastar-lukkar i:nth-child(3) { left: 64%; }
+
+.lastar-ut { pointer-events: none; }
+.lastar-ut .lastar-lukkar i:nth-child(1) { animation: lukk 560ms cubic-bezier(.62,.02,.34,1)   0ms both; }
+.lastar-ut .lastar-lukkar i:nth-child(2) { animation: lukk 560ms cubic-bezier(.62,.02,.34,1)  60ms both; }
+.lastar-ut .lastar-lukkar i:nth-child(3) { animation: lukk 560ms cubic-bezier(.62,.02,.34,1) 120ms both; }
+
+/* Innholdet byttes BAK platene, ikke før dem. 210 ms er der den siste
+   platen har dekket sitt felt. */
+.lastar-ut .lastar-grunn,
+.lastar-ut .lastar-lerret,
+.lastar-ut .lastar-flat,
+.lastar-ut .lastar-vignett,
+.lastar-ut .lastar-tekst { animation: bytUt 1ms linear 210ms both; }
+
+@keyframes lukk {
+  0%   { transform: skewX(-12deg) translate3d(-210%, 0, 0); }
+  38%  { transform: skewX(-12deg) translate3d(0, 0, 0); }
+  52%  { transform: skewX(-12deg) translate3d(0, 0, 0); }
+  100% { transform: skewX(-12deg) translate3d(210%, 0, 0); }
+}
+@keyframes bytUt { to { opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .lastar, .lastar-tekst { transition: opacity .2s linear; }
-  .lastar-ut { transform: none; }
+  /* Ingen plater som feier. Skjermen tones bare ut. */
+  .lastar-lukkar { display: none; }
+  .lastar-ut { opacity: 0; transition: opacity .25s linear; }
+  .lastar-ut .lastar-grunn,
+  .lastar-ut .lastar-lerret,
+  .lastar-ut .lastar-flat,
+  .lastar-ut .lastar-vignett,
+  .lastar-ut .lastar-tekst { animation: none; }
 }
 
 /* ---------- Porten ----------

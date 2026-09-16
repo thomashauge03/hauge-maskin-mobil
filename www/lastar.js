@@ -412,6 +412,10 @@
     var d = document.createElement('div');
     d.className = 'lastar';
     d.innerHTML =
+      /* Grunnen ligger for seg. Ved utgangen skal bakgrunnen forsvinne
+         sammen med innholdet mens lukkeren blir stående – lå fargen på
+         .lastar, ville hele skjermen vært svart til siste bilde. */
+      '<div class="lastar-grunn"></div>' +
       '<canvas class="lastar-lerret"></canvas>' +
       '<div class="lastar-blink"></div>' +
       '<div class="lastar-vignett"></div>' +
@@ -434,7 +438,11 @@
         '</div>' +
         '<div class="lastar-skinne"><i></i></div>' +
         '<div class="lastar-steg">Kobler til…</div>' +
-      '</div>';
+      '</div>' +
+      /* Lukkeren. Tre skråstilte plater i merkets egen vinkel som feier
+         over skjermen, bytter det som ligger under, og feier videre ut.
+         Se .lastar-lukkar i styles.css. */
+      '<div class="lastar-lukkar"><i></i><i></i><i></i></div>';
     /* Sidas navn kommer fra sider.json, altså utanfrå. Den settes med
        textContent og aldri med innerHTML – et sidenavn skal ikke kunne
        være markup. */
@@ -895,6 +903,9 @@
     if (this.ramme) cancelAnimationFrame(this.ramme);
     var meg = this;
     this.rot.classList.add('lastar-ut');
+    /* 760 ms: platene dekker på 210, innholdet byttes bak dem, og den siste
+       er ute på 680. Rev vi elementet før det, ville lukkeren forsvunnet
+       midt i sitt eget sveip. */
     setTimeout(function () {
       if (meg.rot && meg.rot.parentNode) meg.rot.parentNode.removeChild(meg.rot);
       /* Kontekst og buffere slippes eksplisitt. En WebGL-kontekst som
@@ -907,7 +918,7 @@
       meg.modell = null;
       meg.ferdigKall.forEach(function (f) { f(); });
       meg.ferdigKall = [];
-    }, 520);
+    }, 760);
   };
 
   /* ══════════════════════════════════════════════════════════════════
