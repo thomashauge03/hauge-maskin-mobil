@@ -45,8 +45,10 @@
     var s = document.currentScript;
     return s && s.src ? s.src.replace(/[^/]*$/, '') : '';
   })();
-  var GLB = BASE + 'assets/hm-logo.glb';
-  var FLAT = BASE + 'assets/logo-trim.png';
+  /* HM_LASTAR_GLB lar modellen peke et annet sted – en annen logo, eller
+     en data-URI der binære filer ikke kan serveres. */
+  var GLB = window.HM_LASTAR_GLB || (BASE + 'assets/hm-logo.glb');
+  var FLAT = window.HM_LASTAR_FLAT || (BASE + 'assets/logo-trim.png');
 
   /* Slagplanen, i millisekund. */
   var T = {
