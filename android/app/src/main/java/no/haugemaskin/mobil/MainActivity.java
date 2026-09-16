@@ -31,24 +31,32 @@ public class MainActivity extends BridgeActivity {
      * ligger bunnfeltet – status og Om-knappen – under navigasjonslinja, og
      * er halvveis dekket.
      *
-     * CSS-en prøver å løse det med env(safe-area-inset-bottom), og det er
-     * riktig på iPhone. Men Android sin WebView fyller aldri ut den verdien;
-     * der er den alltid 0. Innrykket må komme herfra.
+     * CSS-en prøver å løse det med env(safe-area-inset-top/bottom), og det er
+     * riktig på iPhone. Men Android sin WebView fyller aldri ut de verdiene;
+     * der er de alltid 0. Innrykket må komme herfra.
      *
-     * Bare bunn og sider. Toppen eier StatusBar-pluginen, som er satt opp med
-     * overlaysWebView: false i capacitor.config.json – legger vi på et
-     * toppinnrykk her også, blir det dobbelt.
+     * ALLE fire sidene, også toppen.
+     *
+     * Første utgave satte bare bunn og sider, fordi StatusBar-pluginen er satt
+     * opp med overlaysWebView: false og altså skulle eie toppen. Den antakelsen
+     * var feil: fra Android 15 får ikke pluginen lov til å holde WebView-en
+     * unna statuslinja lenger. Resultatet var at sidelista lå oppå klokka og
+     * batteriet, og at topplinja i appen satt under dem.
      */
     private void holdInnhaldetUnnaSystemlinjene() {
         final View innhald = findViewById(android.R.id.content);
         if (innhald == null) return;
 
+        // Området innrykket lager, er denne visningen sin egen bakgrunn. Uten
+        // fargen blir det en lys stripe bak statuslinja på en ellers svart app.
+        innhald.setBackgroundColor(0xFF0D0D0F);
+
         ViewCompat.setOnApplyWindowInsetsListener(innhald, (view, vindaugsInnrykk) -> {
             Insets linjer = vindaugsInnrykk.getInsets(WindowInsetsCompat.Type.systemBars());
-            view.setPadding(linjer.left, view.getPaddingTop(), linjer.right, linjer.bottom);
+            view.setPadding(linjer.left, linjer.top, linjer.right, linjer.bottom);
 
             // Vi returnerer innrykket videre i stedet for CONSUMED, slik at
-            // StatusBar-pluginen fortsatt får se toppen sin.
+            // andre som lytter fortsatt får se det.
             return vindaugsInnrykk;
         });
 

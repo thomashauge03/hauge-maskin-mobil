@@ -4,7 +4,7 @@
 
 const SIDER_URL =
   'https://raw.githubusercontent.com/thomashauge03/hauge-maskin-app/main/sider.json';
-const VERSJON = '1.7.0';
+const VERSJON = '1.7.1';
 
 /* Den lagrede lista hører til én bruker, ikke til telefonen.
    Logger Ola ut og Kari inn på samme telefon, ville Kari sett Olas liste
@@ -58,11 +58,33 @@ function skrivLokalt(liste) {
 
 const sistHenta = () => localStorage.getItem(lagerTidNokkel());
 
+/* Tilgangslista blir lagret for seg.
+   Får vi ikke tak i den ved neste henting, vil vi fortsatt kunne vise en
+   FERSK sideliste – filtrert med det vi visste sist. Uten dette måtte vi
+   enten vise den gamle lista, eller vise sider folk ikke skal se. */
+const valNokkel = () => `${lagerNokkel()}-val`;
+
+function lesVal() {
+  try {
+    const raa = localStorage.getItem(valNokkel());
+    return raa ? JSON.parse(raa) : null;
+  } catch {
+    return null;
+  }
+}
+
+function skrivVal(val) {
+  try {
+    localStorage.setItem(valNokkel(), JSON.stringify(val || []));
+  } catch { /* ikke kritisk */ }
+}
+
 /* Ved utlogging skal ingenting av den forrige brukeren stå igjen. */
 function tomLokalt() {
   try {
     localStorage.removeItem(lagerNokkel());
     localStorage.removeItem(lagerTidNokkel());
+    localStorage.removeItem(valNokkel());
   } catch { /* ingenting å gjøre */ }
   sider = [];
 }
@@ -103,24 +125,28 @@ async function hentSider({ stille = false } = {}) {
       }));
 
     /* Lista over er den samme for alle. Navet sier hvor jeg avviker.
-       Får vi ikke svar, lagrer vi ingenting – å skrive en ufiltrert liste
-       til telefonen ville vist for mye ved neste oppstart, og da uten at
-       noe nett kunne rette det opp igjen. */
-    const val = await window.HM_NAV.mineSideval();
-    if (val === null) {
-      const lagra = lesLokalt();
-      if (lagra && lagra.length) {
-        sider = lagra;
-        teikn();
-        visStatus('Viser lagret liste');
-        return false;
-      }
-    }
+
+       Får vi ikke svar, bruker vi det vi visste sist i stedet for å gi opp.
+       Da blir sidelista fortsatt fersk – navn, adresser og grupper er
+       oppdaterte – og tilgangen er den fra forrige gang.
+
+       Den forrige utgaven viste den LAGREDE lista i dette tilfellet, og da
+       frøs hele lista til noe annet endret seg. Et hikk på nettet holdt, og
+       endringer gjort i adminbordet dukket aldri opp. */
+    const ferskt = await window.HM_NAV.mineSideval();
+    const val = ferskt === null ? lesVal() : ferskt;
 
     sider = filtrerEtterTilgang(alle, val);
-    skrivLokalt(sider);
     teikn();
-    visStatus();
+
+    if (ferskt === null) {
+      // Ikke lagre en liste vi ikke vet er riktig filtrert – men vis den.
+      visStatus('Oppdatert · tilgangen er fra sist');
+    } else {
+      skrivVal(ferskt);
+      skrivLokalt(sider);
+      visStatus();
+    }
     return true;
   } catch (err) {
     // Uten nett bruker vi den lagrede lista i stedet for å stå tomt

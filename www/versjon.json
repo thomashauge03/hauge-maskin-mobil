@@ -1,6 +1,6 @@
 {
   "_om": "Nyeste versjon av mobilappen. Appen sjekker denne fila ved oppstart og sier fra når det finnes noe nytt. Blir oppdatert når en ny versjon blir bygd.",
-  "versjon": "1.7.0",
-  "apk": "https://github.com/thomashauge03/hauge-maskin-mobil/releases/latest/download/Hauge-Maskin-1.7.0.apk",
-  "endringar": "Du ser nå bare sidene du har fått tilgang til. Hvem som ser hva styres fra adminbordet."
+  "versjon": "1.7.1",
+  "apk": "https://github.com/thomashauge03/hauge-maskin-mobil/releases/latest/download/Hauge-Maskin-1.7.1.apk",
+  "endringar": "Topp- og bunnlinja ligger ikke lenger under systemlinjene på Android. Endringer fra adminbordet dukker opp igjen - lista kunne fryse på en gammel kopi."
 }
