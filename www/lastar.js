@@ -391,8 +391,18 @@
 
   /* ════════════════════════════════════════════════════════════════ */
 
-  function Lastar(vert) {
-    this.vert = vert; this.rot = null; this.gl = null; this.modell = null;
+  /* val:
+       tittel  – står i stedet for ordmerket. Brukes når sekvensen dekker
+                 åpningen av en SIDE: da er sidas navn opplysningen, ikke
+                 firmanavnet.
+       band    – teksten i bransjebåndet. Uten tittel står den faste.
+       fart    – hvor mye raskere hele sekvensen går. Åpningen av appen får
+                 gå i full lengde. Å åpne en side skal ikke koste fire
+                 sekunder når du gjør det femti ganger om dagen. */
+  function Lastar(vert, val) {
+    this.vert = vert; this.val = val || {};
+    this.fart = this.val.fart || 1;
+    this.rot = null; this.gl = null; this.modell = null;
     this.t0 = 0; this.framgang = 0; this.visFramgang = 0;
     this.ferdigKall = []; this.arbeidFerdig = false; this.avslutta = false;
     this.ramme = null; this.hoppa = false; this.gaar = false;
@@ -425,6 +435,26 @@
         '<div class="lastar-skinne"><i></i></div>' +
         '<div class="lastar-steg">Kobler til…</div>' +
       '</div>';
+    /* Sidas navn kommer fra sider.json, altså utanfrå. Den settes med
+       textContent og aldri med innerHTML – et sidenavn skal ikke kunne
+       være markup. */
+    if (this.val.tittel) {
+      d.classList.add('lastar-side');
+      d.querySelector('.lm-o1').textContent = this.val.tittel;
+      d.querySelector('.lm-o2').remove();
+      d.querySelector('.lm-as').remove();
+      d.querySelector('.lm-b1').textContent = this.val.band || '';
+      /* «Kobler til…» hører oppstarten av appen til. Her åpner vi en side,
+         og teksten vises uansett bare hvis det tar uventet lang tid. */
+      d.querySelector('.lastar-steg').textContent = 'Åpner…';
+      d.querySelector('.lm-p1').remove();
+      d.querySelector('.lm-b2').remove();
+      d.querySelector('.lm-p2').remove();
+      d.querySelector('.lm-b3').remove();
+      if (!this.val.band) d.querySelector('.lm-band').remove();
+    }
+    if (this.fart !== 1) d.style.setProperty('--takt', (1 / this.fart).toFixed(3));
+
     this.rot = d;
     this.lerret = d.querySelector('.lastar-lerret');
     this.skinne = d.querySelector('.lastar-skinne i');
@@ -436,7 +466,7 @@
     /* Har du sett filmen femti ganger i dag, skal du slippe. */
     var meg = this;
     d.addEventListener('pointerdown', function () {
-      if (meg.gaar && !meg.hoppa) { meg.hoppa = true; meg.t0 -= T.hald; }
+      if (meg.gaar && !meg.hoppa) { meg.hoppa = true; meg.t0 -= T.hald / meg.fart; }
     });
     return this;
   };
@@ -683,7 +713,10 @@
 
   Lastar.prototype.teikn = function (naa) {
     if (this.avslutta) return;
-    var meg = this, gl = this.gl, t = naa - this.t0;
+    /* Klokka skaleres, ikke tidsplanen. Da holder ett sett tidspunkter for
+       begge lengdene, og koreografien kan ikke gli fra hverandre. --takt i
+       CSS-en gjør det samme for ordmerket under. */
+    var meg = this, gl = this.gl, t = (naa - this.t0) * this.fart;
 
     if (window.innerWidth !== this.br || window.innerHeight !== this.hg) this.maal();
 
@@ -826,7 +859,7 @@
       /* Flat visning har ingen tegneløkke som kan avslutte for oss. */
       if (meg.flatModus) {
         var gaatt = performance.now() - meg.t0;
-        setTimeout(function () { meg.avslutt(); }, Math.max(0, 900 - gaatt));
+        setTimeout(function () { meg.avslutt(); }, Math.max(0, 900 / meg.fart - gaatt));
         return;
       }
 
@@ -834,7 +867,7 @@
          modellen ennå ikke er hentet er IKKE det samme som at vi har gitt
          opp – klokka starter først når den er her, og da skal filmen få gå.
          Dette er bare en bakstopper for et nett som aldri svarer. */
-      setTimeout(function () { meg.avslutt(); }, T.hald + 900);
+      setTimeout(function () { meg.avslutt(); }, (T.hald + 900) / meg.fart);
     });
   };
 
@@ -1072,7 +1105,7 @@
   };
 
   window.HM_LASTAR = {
-    lag: function (vert) { return new Lastar(vert || document.body).bygg(); },
+    lag: function (vert, val) { return new Lastar(vert || document.body, val).bygg(); },
     bakgrunn: function (vert) { return new Bakgrunn(vert).start(); }
   };
 })();

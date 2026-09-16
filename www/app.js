@@ -4,7 +4,7 @@
 
 const SIDER_URL =
   'https://raw.githubusercontent.com/thomashauge03/hauge-maskin-app/main/sider.json';
-const VERSJON = '1.11.0';
+const VERSJON = '1.12.0';
 
 /* Den lagrede lista hører til én bruker, ikke til telefonen.
    Logger Ola ut og Kari inn på samme telefon, ville Kari sett Olas liste
@@ -308,6 +308,27 @@ function klarerteOpphav() {
    bevist at det hører til appen – åpner seg i nettleserens egen visning,
    med adresselinje. Det er et bevisst valg, ikke en teknisk nødvendighet, og
    for SmartDok og Tripletex er adresselinja noe vi vil ha. Se README. */
+/* Sekvensen som dekker åpningen av en side.
+
+   Den dekker tida fra du trykker til systemet har tatt over skjermen –
+   ikke lastinga av selve siden, for den skjer inne i Chrome der vi ikke
+   kan tegne. Men det er nettopp trykk-til-oppstart appen føles frosset i
+   dag, og på en kald Chrome er det ikke kort.
+
+   Halvannen gang så fort som åpningen av appen. Den skal kle et øyeblikk,
+   ikke bli en seremoni du må gjennom femti ganger om dagen. */
+function visSideFilm(side) {
+  if (!window.HM_LASTAR) return null;
+  let vert = '';
+  try { vert = new URL(side.url).hostname.replace(/^www\./, '').toUpperCase(); } catch { /* uten */ }
+  if (bakgrunn) bakgrunn.pause(true);
+  return window.HM_LASTAR.lag(document.body, {
+    tittel: side.name,
+    band: vert,
+    fart: 2.4
+  }).start();
+}
+
 async function opneSide(side) {
   const url = trygdAdresse(side.url);
   if (!url) {
@@ -315,7 +336,24 @@ async function opneSide(side) {
     return;
   }
   const cap = window.Capacitor;
+  const film = visSideFilm(side);
 
+  /* Filmen får aldri stå i veien for sida. Svarer ikke oppstarten, slipper
+     den taket etter dette og du er tilbake i lista. */
+  const slipp = async () => {
+    if (!film) return;
+    await medTak(film.ferdig(), 3000);
+    if (bakgrunn) bakgrunn.pause(false);
+  };
+
+  try {
+    await opneSideNo(url, cap);
+  } finally {
+    await slipp();
+  }
+}
+
+async function opneSideNo(url, cap) {
   if (cap && cap.isNativePlatform && cap.isNativePlatform()) {
     // Våre egne system åpner seg i fullskjerm uten adresselinje, dersom
     // domenet beviser at det hører til appen. Mangler beviset, gjør Chrome
@@ -617,9 +655,15 @@ function startBakgrunn() {
      alt. Da er det ingenting å se bak, og da skal det heller ikke tegnes.
      Observatør framfor å hekte på hver enkelt lukkeknapp: arkene åpnes og
      lukkes fra sju steder, og den åttende er den som blir glemt. */
-    const sjaa = () => {
+  const sjaa = () => {
     if (!bakgrunn) return;
-    bakgrunn.pause(!$('ark').hidden || !$('om').hidden || !$('port').hidden);
+    /* Også når en sekvens ligger over. Uten den siste ville observatøren
+       satt bakgrunnen i gang igjen bak filmen første gang noe annet rørte
+       seg – og da tegner vi noe ingen ser. */
+    bakgrunn.pause(
+      !$('ark').hidden || !$('om').hidden || !$('port').hidden ||
+      !!document.querySelector('.lastar')
+    );
   };
   const vakt = new MutationObserver(sjaa);
   for (const id of ['ark', 'om', 'port']) {

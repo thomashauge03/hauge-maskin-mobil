@@ -263,7 +263,25 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
   overflow: hidden;
   display: flex; align-items: center; justify-content: center;
   transition: opacity .5s ease, transform .5s cubic-bezier(.4, 0, .9, .3);
+  /* Takten. 1 er full lengde, som ved oppstart av appen. Å åpne en side
+     setter den lavere, og da krymper hele koreografien i takt med
+     3D-sekvensen i stedet for å gli fra den. */
+  --takt: 1;
 }
+
+/* Når sekvensen dekker åpningen av en SIDE, er det sidas navn som står
+   nederst. Navnet kommer utenfra og kan være langt, så det får bryte og
+   er satt mindre enn firmanavnet. */
+.lastar-side .lm-ord {
+  font-size: 23px; text-align: center;
+  /* Bundet til skjermen, ikke til et tall. Skjevheten legger et par piksler
+     på hver side, og på en smal telefon er de to pikslene forskjellen på
+     luft og en tekst som klistrer seg til kanten. */
+  max-width: min(300px, calc(100vw - 60px));
+  display: block; text-wrap: balance; line-height: 1.14;
+}
+.lastar-side .lm-band span { font-size: 8px; letter-spacing: .13em; }
+.lastar-side .lastar-skinne { display: none; }
 .lastar-lerret { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .lastar-lerret[hidden] { display: none; }
 
@@ -303,16 +321,16 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .lm-ord span, .lm-band, .lm-band span, .lm-band i, .lastar-skinne {
   opacity: 0;
 }
-.lastar-tekst-inne .lm-o1 { animation: ordInn 300ms cubic-bezier(.2,.78,.28,1)  0ms both; }
-.lastar-tekst-inne .lm-o2 { animation: ordInn 300ms cubic-bezier(.2,.78,.28,1) 130ms both; }
-.lastar-tekst-inne .lm-as { animation: asInn  260ms cubic-bezier(.2,1.5,.4,1)  340ms both; }
-.lastar-tekst-inne .lm-band { animation: bandUt 360ms cubic-bezier(.16,.82,.24,1) 430ms both; }
-.lastar-tekst-inne .lm-b1 { animation: ordLand 240ms cubic-bezier(.2,.8,.3,1) 630ms both; }
-.lastar-tekst-inne .lm-p1 { animation: prikk   200ms ease-out                  690ms both; }
-.lastar-tekst-inne .lm-b2 { animation: ordLand 240ms cubic-bezier(.2,.8,.3,1) 710ms both; }
-.lastar-tekst-inne .lm-p2 { animation: prikk   200ms ease-out                  770ms both; }
-.lastar-tekst-inne .lm-b3 { animation: ordLand 240ms cubic-bezier(.2,.8,.3,1) 790ms both; }
-.lastar-tekst-inne .lastar-skinne { animation: tonInn 400ms ease 560ms both; }
+.lastar-tekst-inne .lm-o1 { animation: ordInn calc(300ms * var(--takt)) cubic-bezier(.2,.78,.28,1) 0ms both; }
+.lastar-tekst-inne .lm-o2 { animation: ordInn calc(300ms * var(--takt)) cubic-bezier(.2,.78,.28,1) calc(130ms * var(--takt)) both; }
+.lastar-tekst-inne .lm-as { animation: asInn calc(260ms * var(--takt)) cubic-bezier(.2,1.5,.4,1) calc(340ms * var(--takt)) both; }
+.lastar-tekst-inne .lm-band { animation: bandUt calc(360ms * var(--takt)) cubic-bezier(.16,.82,.24,1) calc(430ms * var(--takt)) both; }
+.lastar-tekst-inne .lm-b1 { animation: ordLand calc(240ms * var(--takt)) cubic-bezier(.2,.8,.3,1) calc(630ms * var(--takt)) both; }
+.lastar-tekst-inne .lm-p1 { animation: prikk calc(200ms * var(--takt)) ease-out calc(690ms * var(--takt)) both; }
+.lastar-tekst-inne .lm-b2 { animation: ordLand calc(240ms * var(--takt)) cubic-bezier(.2,.8,.3,1) calc(710ms * var(--takt)) both; }
+.lastar-tekst-inne .lm-p2 { animation: prikk calc(200ms * var(--takt)) ease-out calc(770ms * var(--takt)) both; }
+.lastar-tekst-inne .lm-b3 { animation: ordLand calc(240ms * var(--takt)) cubic-bezier(.2,.8,.3,1) calc(790ms * var(--takt)) both; }
+.lastar-tekst-inne .lastar-skinne { animation: tonInn calc(400ms * var(--takt)) ease calc(560ms * var(--takt)) both; }
 
 @keyframes ordInn {
   from { opacity: 0; clip-path: inset(0 100% 0 0); transform: skewX(-5deg) translateX(-10px); }
