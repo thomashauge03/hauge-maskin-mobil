@@ -4,7 +4,7 @@
 
 const SIDER_URL =
   'https://raw.githubusercontent.com/thomashauge03/hauge-maskin-app/main/sider.json';
-const VERSJON = '1.8.0';
+const VERSJON = '1.9.0';
 
 /* Den lagrede lista hører til én bruker, ikke til telefonen.
    Logger Ola ut og Kari inn på samme telefon, ville Kari sett Olas liste
@@ -359,7 +359,12 @@ async function opneSide(side) {
    En app som er installert fra en fil kan ikke oppdatere seg helt av seg
    selv slik Play Butikk gjør. Vi sjekker derfor hva som er nyeste versjon og
    sier fra, så er det ett trykk å hente den. */
-const VERSJON_URL = 'versjon.json';
+/* MÅ være en full adresse. Stod som 'versjon.json' fra 1.2.0 til 1.9.0, og
+   da leste den installerte appen fila som lå INNE I sin egen APK – den sier
+   alltid nøyaktig den versjonen du allerede har. Varselet om ny versjon
+   kunne dermed aldri slå til. Nå spørres den utlagte kopien. */
+const VERSJON_URL =
+  'https://thomashauge03.github.io/hauge-maskin-mobil/versjon.json';
 const APK_FALLBACK =
   'https://github.com/thomashauge03/hauge-maskin-mobil/releases/latest';
 
@@ -389,28 +394,58 @@ function opneNedlasting(url) {
   window.open(mal, '_blank', 'noopener');
 }
 
+async function hentVersjonsinfo() {
+  try {
+    const res = await fetch(`${VERSJON_URL}?t=${Date.now()}`, { cache: 'no-store' });
+    if (!res.ok) return null;
+    const info = await res.json();
+    return info && info.versjon ? info : null;
+  } catch { return null; }
+}
+
+/* tvinga betyr: brukeren har bedt om dette selv, så et tidligere «ikke nå»
+   skal ikke skjule svaret. */
+function visOppdatering(info, tvinga = false) {
+  $('oppdateringTittel').textContent = `Ny versjon ${info.versjon}`;
+  $('oppdateringDetalj').textContent = info.endringar || 'Trykk for å hente den nye versjonen.';
+  $('oppdateringLast').onclick = () => opneNedlasting(info.apk);
+  $('oppdateringLukk').onclick = () => {
+    $('oppdatering').hidden = true;
+    // Hopp over akkurat denne versjonen, men spør igjen ved neste
+    localStorage.setItem('hm-hoppa-versjon', info.versjon);
+  };
+  const hoppa = localStorage.getItem('hm-hoppa-versjon') === info.versjon;
+  $('oppdatering').hidden = hoppa && !tvinga;
+}
+
 async function sjekkVersjon() {
   // Bare den installerte Android-appen har noe å oppdatere
   if (!erNativ()) return;
-  try {
-    const res = await fetch(`${VERSJON_URL}?t=${Date.now()}`, { cache: 'no-store' });
-    if (!res.ok) return;
-    const info = await res.json();
-    if (!info.versjon || !nyareEnn(info.versjon, VERSJON)) return;
+  const info = await hentVersjonsinfo();
+  if (!info || !nyareEnn(info.versjon, VERSJON)) return;
+  visOppdatering(info);
+}
 
-    $('oppdateringTittel').textContent = `Ny versjon ${info.versjon}`;
-    $('oppdateringDetalj').textContent = info.endringar || 'Trykk for å hente den nye versjonen.';
-    $('oppdatering').hidden = false;
-    $('oppdateringLast').onclick = () => opneNedlasting(info.apk);
-    $('oppdateringLukk').onclick = () => {
-      $('oppdatering').hidden = true;
-      // Hopp over akkurat denne versjonen, men spør igjen ved neste
-      localStorage.setItem('hm-hoppa-versjon', info.versjon);
-    };
-    if (localStorage.getItem('hm-hoppa-versjon') === info.versjon) {
-      $('oppdatering').hidden = true;
-    }
-  } catch { /* uten nett er dette uinteressant */ }
+/* Manuell sjekk fra Om-arket. Den automatiske sier bare fra når det finnes
+   noe nytt – denne svarer alltid, for «du har den nyeste» er også et svar
+   når du har trykket selv. */
+async function sjekkManuelt() {
+  const knapp = $('omSjekk');
+  const svar = $('omSjekkSvar');
+  if (knapp.dataset.gaar === 'ja') return;
+  knapp.dataset.gaar = 'ja';
+  svar.textContent = 'Sjekker…';
+
+  const info = await hentVersjonsinfo();
+  knapp.dataset.gaar = '';
+
+  if (!info) { svar.textContent = 'Fikk ikke sjekket'; return; }
+  if (!nyareEnn(info.versjon, VERSJON)) { svar.textContent = 'Du har den nyeste'; return; }
+
+  svar.textContent = `Hent ${info.versjon} →`;
+  visOppdatering(info, true);
+  // Nå er knappen selve nedlastingen, ikke sjekken
+  knapp.onclick = () => opneNedlasting(info.apk);
 }
 
 // I nettleseren på Android tilbyr vi den ekte appen i stedet
@@ -419,14 +454,8 @@ async function tilbyInstallasjon() {
   if (window.matchMedia('(display-mode: standalone)').matches) return;
   if (localStorage.getItem('hm-avslo-app') === 'ja') return;
 
-  let apk = APK_FALLBACK;
-  try {
-    const res = await fetch(`${VERSJON_URL}?t=${Date.now()}`, { cache: 'no-store' });
-    if (res.ok) {
-      const info = await res.json();
-      if (info.apk) apk = info.apk;
-    }
-  } catch { /* bruker fallback */ }
+  const info = await hentVersjonsinfo();
+  const apk = (info && info.apk) || APK_FALLBACK;
 
   $('installer').hidden = false;
   $('installerLast').onclick = () => opneNedlasting(apk);
@@ -486,6 +515,10 @@ $('btnOm').addEventListener('click', () => {
   $('omTekst').textContent =
     'Alle systemene til Hauge Maskin samlet på ett sted. Lista blir hentet automatisk, ' +
     'så nye sider dukker opp av seg selv.';
+  /* Nullstilles hver gang arket åpnes. Et svar fra i går er ikke et svar. */
+  $('omSjekk').onclick = sjekkManuelt;
+  $('omSjekk').dataset.gaar = '';
+  $('omSjekkSvar').textContent = 'Sjekk →';
   $('om').hidden = false;
 });
 $('omLukk').addEventListener('click', () => { $('om').hidden = true; });

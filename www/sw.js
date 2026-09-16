@@ -4,7 +4,7 @@
    lagrede kopien uten å spørre nettet, så et uendret navn betyr at alle som
    har appen på hjem-skjermen fortsetter med den gamle utgaven på ubestemt
    tid – også etter at en ny er lagt ut. */
-const CACHE = 'hauge-maskin-v9';
+const CACHE = 'hauge-maskin-v10';
 const SKALET = [
   './',
   './index.html',

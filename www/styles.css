@@ -220,6 +220,17 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .om-rad b { color: var(--tekst); font-weight: 600; }
 .om-rad + .knapp { margin-top: 18px; }
 
+/* Samme rad som de andre, men den gjør noe. Høyresida er både svaret og
+   knappen: har du den nyeste står det der, finnes det en ny blir den
+   samme raden nedlastingen. */
+.om-knapp {
+  width: 100%; font-family: inherit; font-size: 14px; text-align: left;
+  cursor: pointer;
+}
+.om-knapp b { color: var(--raud); }
+.om-knapp:active { background: var(--botn-3); }
+.om-knapp[data-gaar="ja"] b { color: var(--dempa); }
+
 /* ---------- Åpningssekvensen ----------
    Ligger over absolutt alt, også porten. Den er det første som tegnes
    og det siste som slipper taket. Se lastar.js for koreografien. */
