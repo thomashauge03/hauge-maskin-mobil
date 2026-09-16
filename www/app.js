@@ -4,7 +4,7 @@
 
 const SIDER_URL =
   'https://raw.githubusercontent.com/thomashauge03/hauge-maskin-app/main/sider.json';
-const VERSJON = '1.9.0';
+const VERSJON = '1.10.0';
 
 /* Den lagrede lista hører til én bruker, ikke til telefonen.
    Logger Ola ut og Kari inn på samme telefon, ville Kari sett Olas liste
@@ -605,6 +605,35 @@ async function startApp() {
    hver gang appen kommer fram igjen fra lomma. */
 let lastar = null;
 
+/* Logoen som roterer langt bak lista. Den startes først når lista faktisk
+   er framme – bak porten ville den bare vært en GPU som gikk for ingenting. */
+let bakgrunn = null;
+
+function startBakgrunn() {
+  if (bakgrunn || !window.HM_LASTAR || !window.HM_LASTAR.bakgrunn) return;
+  bakgrunn = window.HM_LASTAR.bakgrunn(document.body);
+
+  /* Et ark som glir opp legger seg over med matt glass, og porten dekker
+     alt. Da er det ingenting å se bak, og da skal det heller ikke tegnes.
+     Observatør framfor å hekte på hver enkelt lukkeknapp: arkene åpnes og
+     lukkes fra sju steder, og den åttende er den som blir glemt. */
+    const sjaa = () => {
+    if (!bakgrunn) return;
+    bakgrunn.pause(!$('ark').hidden || !$('om').hidden || !$('port').hidden);
+  };
+  const vakt = new MutationObserver(sjaa);
+  for (const id of ['ark', 'om', 'port']) {
+    vakt.observe($(id), { attributes: true, attributeFilter: ['hidden'] });
+  }
+  sjaa();
+}
+
+function stoppBakgrunn() {
+  if (!bakgrunn) return;
+  bakgrunn.riv();
+  bakgrunn = null;
+}
+
 /* Filmen får ALDRI holde appen som gissel. Henger nettet, slipper vi
    uansett taket etter dette, og appen viser sin egen «Henter sidene…».
    En loading-skjerm som ikke går bort er ikke en loading-skjerm, det er
@@ -627,7 +656,7 @@ async function opneEllerVis({ medFilm = false } = {}) {
   const arbeid = (async () => {
     const inn = await avgjerPort();
     if (lastar) lastar.sett(0.55, inn ? 'Henter sidene…' : 'Nesten klar…');
-    if (inn) await startApp();
+    if (inn) { await startApp(); startBakgrunn(); }
   })();
 
   if (!lastar) { await arbeid; return; }
@@ -698,6 +727,9 @@ async function loggUtOgTilbake() {
   tomLokalt();
   meg = null;
   appenGaar = false;
+  /* Rives, ikke bare pauses. Den som logger ut skal ikke ha en WebGL-
+     kontekst gående bak innloggingsskjermen. */
+  stoppBakgrunn();
   $('om').hidden = true;
   visPortFeil('loginFeil', '');
   visPortDel('portLogin');

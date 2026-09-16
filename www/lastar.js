@@ -291,7 +291,7 @@
     'precision mediump float;',
     'varying vec3 vVerd; varying vec3 vN;',
     'uniform vec3 uFarge, uKam, uLys;',
-    'uniform float uMetall, uRu, uAlfa, uSveip, uGlod;',
+    'uniform float uMetall, uRu, uAlfa, uSveip, uGlod, uUt, uDiff;',
     'void main(){',
     '  vec3 N = normalize(vN);',
     '  vec3 V = normalize(uKam - vVerd);',
@@ -303,11 +303,16 @@
     '  float sk = pow(max(dot(N,H),0.0), mix(12.0, 96.0, 1.0-uRu)) * mix(0.25, 1.1, uMetall);',
     '  float f = pow(1.0 - max(dot(N,V),0.0), 3.0);',
     '  float s = exp(-pow((vVerd.x - uSveip)*2.6, 2.0));',
-    '  vec3 c = uFarge * (0.10 + 0.95*d);',
+    /* uDiff skrur ned de FLATE sidene uten å røre kant og glans. Bakgrunnen
+       setter den nesten av: da er det bare kantene som fanger lys, og
+       logoen leses som en form i mørket i stedet for en rød flate. */
+    '  vec3 c = uFarge * (0.10 + 0.95*d) * uDiff;',
     '  c += vec3(1.0,0.96,0.94) * sk * 0.6;',
     '  c += vec3(0.886,0.0,0.10) * f * (0.55 + uGlod);',
     '  c += vec3(1.0,0.72,0.74) * s * (0.30 + 0.9*sk);',
-    '  gl_FragColor = vec4(pow(max(c,0.0), vec3(0.4545)), 1.0) * uAlfa;',
+    /* uUt demper hele bildet uten å røre materialene. Bakgrunnen bruker
+       den til å legge seg langt bak teksten; sekvensen lar den stå på 1. */
+    '  gl_FragColor = vec4(pow(max(c,0.0), vec3(0.4545)) * uUt, 1.0) * uAlfa;',
     '}'
   ].join('\n');
 
@@ -352,6 +357,36 @@
     '  gl_FragColor = vec4(mix(vec3(0.95,0.25,0.22), vec3(1.0,0.92,0.86), vLiv), 1.0) * a;',
     '}'
   ].join('\n');
+
+  /* Modellen hentes og tolkes ÉN gang, uansett hvor mange som vil tegne
+     henne. Åpningssekvensen og bakgrunnen deler dette. */
+  var modellLovnad = null;
+  function hentModell() {
+    if (!modellLovnad) {
+      modellLovnad = fetch(GLB)
+        .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.arrayBuffer(); })
+        .then(function (b) { return lesGlb(b); });
+    }
+    return modellLovnad;
+  }
+
+  /* Bufferne må være per kontekst. To WebGL-kontekster kan ikke dele
+     bufferhåndtak, og å legge dem på deler-objektene ville latt den ene
+     renderen overskrive den andres. */
+  function lastOpp(gl, deler) {
+    return deler.map(function (d) {
+      var b = { tal: d.tal };
+      b.pos = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, b.pos);
+      gl.bufferData(gl.ARRAY_BUFFER, d.pos, gl.STATIC_DRAW);
+      if (d.nrm) {
+        b.nrm = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, b.nrm);
+        gl.bufferData(gl.ARRAY_BUFFER, d.nrm, gl.STATIC_DRAW);
+      }
+      return b;
+    });
+  }
 
   /* ════════════════════════════════════════════════════════════════ */
 
@@ -415,10 +450,9 @@
     if (!gl) { this.flatFallback('ingen webgl'); return this; }
     this.gl = gl;
 
-    fetch(GLB)
-      .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.arrayBuffer(); })
-      .then(function (b) {
-        meg.modell = lesGlb(b);
+    hentModell()
+      .then(function (m) {
+        meg.modell = m;
         meg.klargjer();
         /* Klokka starter når det faktisk er noe å se. Ellers spiller
            de første bildene mot en tom skjerm. */
@@ -453,23 +487,13 @@
     var gl = this.gl;
 
     this.pLogo = this.program(VS, FS, ['aPos','aNrm'],
-      ['uMVP','uModell','uNrm','uFarge','uKam','uLys','uMetall','uRu','uAlfa','uSveip','uGlod']);
+      ['uMVP','uModell','uNrm','uFarge','uKam','uLys','uMetall','uRu','uAlfa','uSveip','uGlod','uUt','uDiff']);
     this.pSkygge = this.program(SKYGGE_VS, SKYGGE_FS, ['aXY'],
       ['uMVP','uMidt','uStorleik','uStyrke']);
     this.pStoev = this.program(STOEV_VS, STOEV_FS, ['aStart','aFart','aFroe'],
       ['uMVP','uT','uPx']);
 
-    this.modell.deler.forEach(function (d) {
-      d.bPos = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, d.bPos);
-      gl.bufferData(gl.ARRAY_BUFFER, d.pos, gl.STATIC_DRAW);
-      if (d.nrm) {
-        d.bNrm = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, d.bNrm);
-        gl.bufferData(gl.ARRAY_BUFFER, d.nrm, gl.STATIC_DRAW);
-      }
-      d.pos = null; d.nrm = null;   // ute av JS-minnet, de ligger på kortet nå
-    });
+    this.buf = lastOpp(gl, this.modell.deler);
 
     /* Skyggekvadet */
     this.bKvad = gl.createBuffer();
@@ -698,6 +722,8 @@
     gl.uniform1f(u.uSveip, sveip);
     gl.uniform1f(u.uGlod, glod);
 
+    gl.uniform1f(u.uUt, 1);
+    gl.uniform1f(u.uDiff, 1);
     var deler = this.modell.deler;
     for (var i = 0; i < deler.length; i++) {
       var d = deler[i];
@@ -717,11 +743,12 @@
       gl.uniform1f(u.uRu, d.ru);
       gl.uniform1f(u.uAlfa, b.alfa);
 
-      gl.bindBuffer(gl.ARRAY_BUFFER, d.bPos);
+      var bf = this.buf[i];
+      gl.bindBuffer(gl.ARRAY_BUFFER, bf.pos);
       gl.enableVertexAttribArray(this.pLogo.a.aPos);
       gl.vertexAttribPointer(this.pLogo.a.aPos, 3, gl.FLOAT, false, 0, 0);
-      if (d.bNrm) {
-        gl.bindBuffer(gl.ARRAY_BUFFER, d.bNrm);
+      if (bf.nrm) {
+        gl.bindBuffer(gl.ARRAY_BUFFER, bf.nrm);
         gl.enableVertexAttribArray(this.pLogo.a.aNrm);
         gl.vertexAttribPointer(this.pLogo.a.aNrm, 3, gl.FLOAT, false, 0, 0);
       }
@@ -808,7 +835,220 @@
     }, 520);
   };
 
+  /* ══════════════════════════════════════════════════════════════════
+     BAKGRUNNEN
+
+     Den samme logoen, langt bak lista, som roterer så sakte at du ikke
+     ser at den beveger seg – du ser bare at lyset på kantene flytter
+     seg. Det er forskjellen på dybde og på noe som maser.
+
+     En GPU som aldri hviler er batteri, så den er bygd for å være
+     billig, ikke bare diskré:
+       · halv oppløsning – lerretet tegnes på 0,55x og skaleres opp.
+         Motivet er mørkt og uskarpt, så ingen ser det, men fyllkostnaden
+         faller til under en tredjedel.
+       · 24 bilder i sekundet, ikke 60.
+       · den STOPPER når du ikke ser den: appen i lomma, et ark oppe,
+         porten framme. Ikke pause i løkka – løkka avsluttes.
+     ══════════════════════════════════════════════════════════════════ */
+
+  var B_OPPL = 0.55;      // oppløsning i forhold til skjermen
+  var B_FPS  = 24;
+  var B_RUNDE = 96000;    // millisekund på én omdreining
+
+  function Bakgrunn(vert) {
+    this.vert = vert || document.body;
+    this.gl = null; this.modell = null; this.ramme = null;
+    this.gaar = false; this.riven = false; this.sist = 0; this.t0 = 0;
+    this.stogga = 0;        // hvor mye tid som er stått stille
+    this.pausa = false;
+  }
+
+  Bakgrunn.prototype.start = function () {
+    if (this.lerret || this.riven) return this;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return this;
+
+    var c = document.createElement('canvas');
+    c.className = 'bakgrunn';
+    c.setAttribute('aria-hidden', 'true');
+    this.lerret = c;
+    this.vert.insertBefore(c, this.vert.firstChild);
+
+    var gl = null;
+    try {
+      gl = c.getContext('webgl', { alpha: true, antialias: false, depth: true,
+                                   powerPreference: 'low-power' });
+    } catch (e) { /* under */ }
+    if (!gl) { this.riv(); return this; }
+    this.gl = gl;
+
+    var meg = this;
+    hentModell().then(function (m) {
+      if (meg.riven) return;
+      meg.modell = m;
+      meg.prog = Lastar.prototype.program.call(meg, VS, FS, ['aPos','aNrm'],
+        ['uMVP','uModell','uNrm','uFarge','uKam','uLys','uMetall','uRu','uAlfa','uSveip','uGlod','uUt','uDiff']);
+      meg.buf = lastOpp(gl, m.deler);
+      gl.enable(gl.DEPTH_TEST);
+      gl.enable(gl.CULL_FACE);
+      gl.clearColor(0, 0, 0, 0);
+      meg.maal();
+      meg.t0 = performance.now();
+      meg.kjor();
+    }).catch(function () { meg.riv(); });
+
+    /* Den skal ikke gå mens telefonen ligger i lomma. */
+    this.paaSyn = function () { meg.pause(document.hidden); };
+    document.addEventListener('visibilitychange', this.paaSyn);
+    return this;
+  };
+
+  Bakgrunn.prototype.maal = function () {
+    var b = Math.max(1, Math.min(window.innerWidth || 360, 4096));
+    var h = Math.max(1, Math.min(window.innerHeight || 640, 4096));
+    this.br = b; this.hg = h;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2) * B_OPPL;
+    this.lerret.width = Math.round(b * dpr);
+    this.lerret.height = Math.round(h * dpr);
+    this.gl.viewport(0, 0, this.lerret.width, this.lerret.height);
+  };
+
+  /* Pause er ikke «hopp over tegningen» – da går løkka fortsatt 24 ganger
+     i sekundet for ingenting. Løkka avsluttes, og klokka husker hvor den
+     var, så rotasjonen ikke hopper når den tas opp igjen. */
+  Bakgrunn.prototype.pause = function (av) {
+    av = !!av;
+    if (av === this.pausa || this.riven) return;
+    this.pausa = av;
+    if (av) {
+      if (this.ramme) cancelAnimationFrame(this.ramme);
+      if (this.klokke) clearTimeout(this.klokke);
+      this.ramme = null; this.klokke = null;
+      this.stoggaFraa = performance.now();
+    } else if (this.modell) {
+      if (this.stoggaFraa) this.stogga += performance.now() - this.stoggaFraa;
+      this.stoggaFraa = 0;
+      this.kjor();
+    }
+  };
+
+  /* Bildetaket er en KLOKKE, ikke et filter.
+     Den opplagte måten – be om hvert eneste bilde og hoppe over de fleste –
+     måltes til 165 oppvåkninger i sekundet for å tegne 24 av dem. Da har du
+     ikke spart noe; du har bare flyttet arbeidet fra GPU til CPU. Her sover
+     vi til det er tid, og ber om ett bilde. rAF-en holdes fordi den er det
+     eneste som garanterer at vi ikke tegner midt i en skjermoppdatering. */
+  Bakgrunn.prototype.kjor = function () {
+    var meg = this;
+    if (this.pausa || this.riven || !this.modell) return;
+    /* Rydder alltid før den planlegger. To kjeder som begge fornyer seg
+       selv dobler bildefrekvensen for alltid, og ingen av dem vet om den
+       andre – en feil som bare synes på strømforbruket. */
+    if (this.klokke) clearTimeout(this.klokke);
+    if (this.ramme) cancelAnimationFrame(this.ramme);
+    this.ramme = null;
+    this.klokke = setTimeout(function () {
+      meg.klokke = null;
+      if (meg.pausa || meg.riven) return;
+      meg.ramme = requestAnimationFrame(function (n) { meg.teikn(n); });
+    }, 1000 / B_FPS);
+  };
+
+  Bakgrunn.prototype.teikn = function (naa) {
+    this.ramme = null;
+    if (this.pausa || this.riven) return;
+    var gl = this.gl;
+
+    if (window.innerWidth !== this.br || window.innerHeight !== this.hg) this.maal();
+
+    var t = naa - this.t0 - this.stogga;
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    var fov = 34;
+    var sv = this.lerret.width / this.lerret.height;
+    /* Hele merket skal få plass. Første forsøk var 1,5x skjermbredden, og da
+       så du bare et utsnitt av én bokstav – det leste som en rød flate, ikke
+       som logoen. */
+    var dist = 2.0 / (0.82 * 2 * Math.tan(fov * Math.PI / 360) * Math.max(sv, 0.05));
+    var proj = perspektiv(fov * Math.PI / 180, sv, 0.1, 40);
+    var oye = [0, 0.05, dist];
+    var vp = mul(m4(), proj, sePaa(oye, [0, 0, 0], [0, 1, 0]));
+
+    var vink = (t / B_RUNDE) * Math.PI * 2;
+    var vagg = Math.sin(t / 17000) * 0.14;          // liten vugging i x
+    var loft = Math.sin(t / 23000) * 0.05;          // og et pust opp og ned
+
+    /* Lyset vandrer i egen, lengre takt enn rotasjonen. Faller de sammen,
+       blinker den likt hver runde, og da ser du perioden. */
+    var lysV = Math.sin(t / 31000) * 1.5;
+    var lys = [Math.sin(lysV) * 2.2, 1.2 + Math.cos(t / 41000) * 0.5, 1.9];
+
+    var p = this.prog;
+    gl.useProgram(p.p);
+    gl.uniform3fv(p.u.uKam, oye);
+    gl.uniform3fv(p.u.uLys, lys);
+    gl.uniform1f(p.u.uSveip, -6);     // sveipet hører sekvensen til, ikke her
+    /* Negativ glød demper kantlyset. Uttrykket er f * (0.55 + uGlod), så
+       -0.30 halverer kanten uten en egen uniform. */
+    gl.uniform1f(p.u.uGlod, -0.30);
+    gl.uniform1f(p.u.uAlfa, 1);
+    /* Flatene så godt som av, kantene dempet. Målet er at du skal ANE en
+       form i mørket – ikke lese en logo bak teksten. */
+    gl.uniform1f(p.u.uDiff, 0.04);
+    gl.uniform1f(p.u.uUt, 0.30);
+
+    var snu = fraTRS([0, loft, 0],
+                     [Math.sin(vagg/2)*Math.cos(vink/2), Math.cos(vagg/2)*Math.sin(vink/2),
+                     -Math.sin(vagg/2)*Math.sin(vink/2), Math.cos(vagg/2)*Math.cos(vink/2)],
+                     [1, 1, 1]);
+    var sentrer = m4();
+    sentrer[0] = sentrer[5] = sentrer[10] = this.modell.skala;
+    sentrer[12] = -this.modell.senter[0] * this.modell.skala;
+    sentrer[13] = -this.modell.senter[1] * this.modell.skala;
+    sentrer[14] = -this.modell.senter[2] * this.modell.skala;
+
+    var deler = this.modell.deler;
+    for (var i = 0; i < deler.length; i++) {
+      var d = deler[i], bf = this.buf[i];
+      var modell = mul(m4(), snu, mul(m4(), sentrer, d.verd));
+      gl.uniformMatrix4fv(p.u.uMVP, false, mul(m4(), vp, modell));
+      gl.uniformMatrix4fv(p.u.uModell, false, modell);
+      gl.uniformMatrix3fv(p.u.uNrm, false, normalMat(modell));
+      gl.uniform3fv(p.u.uFarge, d.farge);
+      gl.uniform1f(p.u.uMetall, d.metall);
+      gl.uniform1f(p.u.uRu, d.ru);
+      gl.bindBuffer(gl.ARRAY_BUFFER, bf.pos);
+      gl.enableVertexAttribArray(p.a.aPos);
+      gl.vertexAttribPointer(p.a.aPos, 3, gl.FLOAT, false, 0, 0);
+      if (bf.nrm) {
+        gl.bindBuffer(gl.ARRAY_BUFFER, bf.nrm);
+        gl.enableVertexAttribArray(p.a.aNrm);
+        gl.vertexAttribPointer(p.a.aNrm, 3, gl.FLOAT, false, 0, 0);
+      }
+      gl.drawArrays(gl.TRIANGLES, 0, d.tal);
+    }
+
+    if (!this.lerret.classList.contains('inne')) this.lerret.classList.add('inne');
+    this.kjor();
+  };
+
+  Bakgrunn.prototype.riv = function () {
+    if (this.riven) return;
+    this.riven = true;
+    if (this.ramme) cancelAnimationFrame(this.ramme);
+    if (this.klokke) clearTimeout(this.klokke);
+    if (this.paaSyn) document.removeEventListener('visibilitychange', this.paaSyn);
+    if (this.gl) {
+      var m = this.gl.getExtension('WEBGL_lose_context');
+      if (m) m.loseContext();
+      this.gl = null;
+    }
+    if (this.lerret && this.lerret.parentNode) this.lerret.parentNode.removeChild(this.lerret);
+    this.lerret = null; this.modell = null; this.buf = null;
+  };
+
   window.HM_LASTAR = {
-    lag: function (vert) { return new Lastar(vert || document.body).bygg(); }
+    lag: function (vert) { return new Lastar(vert || document.body).bygg(); },
+    bakgrunn: function (vert) { return new Bakgrunn(vert).start(); }
   };
 })();
