@@ -220,6 +220,73 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .om-rad b { color: var(--tekst); font-weight: 600; }
 .om-rad + .knapp { margin-top: 18px; }
 
+/* ---------- Åpningssekvensen ----------
+   Ligger over absolutt alt, også porten. Den er det første som tegnes
+   og det siste som slipper taket. Se lastar.js for koreografien. */
+.lastar {
+  position: fixed; inset: 0; z-index: 200;
+  background: #0a0a0c;
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity .5s ease, transform .5s cubic-bezier(.4, 0, .9, .3);
+}
+.lastar-lerret { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.lastar-lerret[hidden] { display: none; }
+
+/* Blinket i treffet. Ligger over lerretet, under teksten. */
+.lastar-blink {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(circle at 50% 46%, #fff 0%, #ff5a68 34%, transparent 70%);
+  opacity: 0; mix-blend-mode: screen;
+}
+
+/* Vignetten gjør at midten leser som lysere enn den er, uten at vi
+   trenger å bruke noe på etterbehandling. */
+.lastar-vignett {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 80% 62% at 50% 46%, transparent 40%, #0a0a0cd9 100%);
+}
+
+/* Uten WebGL, uten modellen, eller med redusert bevegelse. */
+.lastar-flat { position: absolute; inset: 0; display: grid; place-items: center; }
+.lastar-flat[hidden] { display: none; }
+.lastar-flat img { width: 148px; opacity: .92; }
+
+.lastar-tekst {
+  position: absolute; left: 0; right: 0; bottom: calc(76px + var(--trygg-botn));
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  opacity: 0; transform: translateY(10px);
+  transition: opacity .55s ease, transform .55s cubic-bezier(.2, .8, .3, 1);
+  pointer-events: none;
+}
+.lastar-tekst-inne .lastar-tekst { opacity: 1; transform: none; }
+
+.lastar-merke {
+  display: flex; gap: 7px; align-items: baseline;
+  font-size: 13px; font-weight: 900; font-style: italic; letter-spacing: .17em;
+}
+.lastar-merke b { color: #fff; font-weight: 900; }
+.lastar-merke span { color: var(--raud); }
+
+/* Skinna fylles av EKTE framgang: innloggingssjekken, så sidelista.
+   Den er ikke en tidtaker som later som. */
+.lastar-skinne {
+  width: 132px; height: 2px; background: #ffffff1c; overflow: hidden; border-radius: 2px;
+}
+.lastar-skinne i {
+  display: block; height: 100%; background: var(--raud);
+  transform: scaleX(0); transform-origin: left;
+}
+.lastar-steg { font-size: 11px; letter-spacing: .06em; color: #5c5c68; }
+
+/* Utgangen: skjermen skyves mot deg og slipper. */
+.lastar-ut { opacity: 0; transform: scale(1.06); pointer-events: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lastar, .lastar-tekst { transition: opacity .2s linear; }
+  .lastar-ut { transform: none; }
+}
+
 /* ---------- Porten ----------
    Ligger over alt til vi vet hvem som holder telefonen. Den er synlig i
    HTML-en fra start og blir skrudd av når økta er i orden – ellers ville

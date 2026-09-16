@@ -4,16 +4,21 @@
    lagrede kopien uten å spørre nettet, så et uendret navn betyr at alle som
    har appen på hjem-skjermen fortsetter med den gamle utgaven på ubestemt
    tid – også etter at en ny er lagt ut. */
-const CACHE = 'hauge-maskin-v8';
+const CACHE = 'hauge-maskin-v9';
 const SKALET = [
   './',
   './index.html',
   './styles.css',
   './nav.js',
+  './lastar.js',
   './app.js',
   './manifest.webmanifest',
   './assets/logo-trim.png',
-  './assets/icon.png'
+  './assets/icon.png',
+  /* Åpningssekvensen skal virke uten nett også. Uten modellen her faller
+     den tilbake til flat logo ute på en jobb uten dekning – som er nettopp
+     der appen brukes mest. */
+  './assets/hm-logo.glb'
 ];
 
 self.addEventListener('install', (e) => {

@@ -548,7 +548,7 @@ async function avgjerPort() {
 }
 
 /* ---------- Oppstart ---------- */
-function startApp() {
+async function startApp() {
   if (appenGaar) return;
   appenGaar = true;
 
@@ -560,13 +560,49 @@ function startApp() {
   } else {
     visTomt('Henter sidene…');
   }
-  hentSider({ stille: !!(lagra && lagra.length) });
+  /* Ventes på, slik at åpningssekvensen kan slippe taket først når det
+     faktisk står noe under den. Uten dette ville filmen vist seg å være
+     et teppe over en tom skjerm. */
+  await hentSider({ stille: !!(lagra && lagra.length) });
   sjekkVersjon();
   tilbyInstallasjon();
 }
 
-async function opneEllerVis() {
-  if (await avgjerPort()) startApp();
+/* Åpningssekvensen, se lastar.js. Den kjøres bare ved kald start – ikke
+   hver gang appen kommer fram igjen fra lomma. */
+let lastar = null;
+
+/* Filmen får ALDRI holde appen som gissel. Henger nettet, slipper vi
+   uansett taket etter dette, og appen viser sin egen «Henter sidene…».
+   En loading-skjerm som ikke går bort er ikke en loading-skjerm, det er
+   en app som har hengt seg. */
+const FILM_TAK = 4500;
+
+function medTak(lovnad, ms) {
+  return Promise.race([
+    lovnad.catch(() => {}),
+    new Promise((ok) => setTimeout(ok, ms))
+  ]);
+}
+
+async function opneEllerVis({ medFilm = false } = {}) {
+  if (medFilm && window.HM_LASTAR) {
+    lastar = window.HM_LASTAR.lag(document.body).start();
+    lastar.sett(0.12, 'Kobler til…');
+  }
+
+  const arbeid = (async () => {
+    const inn = await avgjerPort();
+    if (lastar) lastar.sett(0.55, inn ? 'Henter sidene…' : 'Nesten klar…');
+    if (inn) await startApp();
+  })();
+
+  if (!lastar) { await arbeid; return; }
+
+  await medTak(arbeid, FILM_TAK);
+  const l = lastar;
+  lastar = null;
+  await l.ferdig();
 }
 
 /* ---------- Hendelser i porten ---------- */
@@ -642,7 +678,7 @@ $('omLoggUt').addEventListener('click', loggUtOgTilbake);
 /* ---------- I gang ---------- */
 (function start() {
   ryddGamleNoklar();
-  opneEllerVis();
+  opneEllerVis({ medFilm: true });
 
   /* Når appen kommer fram igjen: står porten åpen, sjekker vi om noen har
      godkjent oss i mellomtiden. Ellers henter vi lista på nytt. */
