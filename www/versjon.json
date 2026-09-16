@@ -1,6 +1,6 @@
 {
   "_om": "Nyeste versjon av mobilappen. Appen sjekker denne fila ved oppstart og sier fra når det finnes noe nytt. Blir oppdatert når en ny versjon blir bygd.",
-  "versjon": "1.10.0",
-  "apk": "https://github.com/thomashauge03/hauge-maskin-mobil/releases/latest/download/Hauge-Maskin-1.10.0.apk",
-  "endringar": "Logoen roterer nå langt bak lista, sakte nok til at du bare merker at lyset flytter seg. Den stopper helt når du ikke ser den."
+  "versjon": "1.11.0",
+  "apk": "https://github.com/thomashauge03/hauge-maskin-mobil/releases/latest/download/Hauge-Maskin-1.11.0.apk",
+  "endringar": "Hele firmalogoen skriver seg ut under 3D-merket i åpningen: navnet sveiper fram, og bransjebåndet skyter ut fra venstre med ett ord om gangen. Sekvensen er lengre."
 }

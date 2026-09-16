@@ -58,7 +58,8 @@
     slag:    1010,   // treffet
     sving:   1080,   // kameraet svinger fram
     ro:      1900,   // front mot logoen
-    hald:    2260    // ferdig – herfra holder vi til arbeidet er gjort
+    merke:   2020,   // navnet skriver seg ut under den
+    hald:    3900    // ferdig – herfra holder vi til arbeidet er gjort
   };
 
   var LAG_ANSIKT = 55;   // innsiden henger etter ytterkanten
@@ -405,8 +406,22 @@
       '<div class="lastar-blink"></div>' +
       '<div class="lastar-vignett"></div>' +
       '<div class="lastar-flat" hidden><img src="' + FLAT + '" alt="Hauge Maskin"></div>' +
+      /* Ordmerket, bygd av elementer i stedet for ett bilde – det er det
+         som lar delene komme inn hver for seg. Se .lastar-merke i
+         styles.css for formen og rekkefølgen. */
       '<div class="lastar-tekst">' +
-        '<div class="lastar-merke"><b>HAUGE</b><span>MASKIN</span></div>' +
+        '<div class="lastar-merke">' +
+          '<div class="lm-ord">' +
+            '<span class="lm-o1">Hauge</span>' +
+            '<span class="lm-o2">Maskin</span>' +
+            '<span class="lm-as">AS</span>' +
+          '</div>' +
+          '<div class="lm-band">' +
+            '<span class="lm-b1">GRAVING</span><i class="lm-p1"></i>' +
+            '<span class="lm-b2">SPRENGNING</span><i class="lm-p2"></i>' +
+            '<span class="lm-b3">TRANSPORT</span>' +
+          '</div>' +
+        '</div>' +
         '<div class="lastar-skinne"><i></i></div>' +
         '<div class="lastar-steg">Kobler til…</div>' +
       '</div>';
@@ -585,7 +600,11 @@
       oye  = [bland(hSenter[0], 0, u) + Math.sin(vink) * dist,
               bland(-0.10, 0.09, u),
               Math.cos(vink) * dist];
-      maal = [bland(hSenter[0] + 0.26, 0, u), 0, 0];
+      /* Kameraet lander med sikte litt UNDER merket, så merket havner
+         høyere i bildet og gjør plass til navnet under. Uten dette står
+         3D-logoen midt på skjermen og ordmerket klemmes mot bunnen, og
+         de to leses som to ting i stedet for én. */
+      maal = [bland(hSenter[0] + 0.26, 0, u), bland(0, -0.34, u), 0];
     } else {
       /* Hvile. Et nesten umerkelig driv, så bildet ikke fryser. */
       var s = (t - T.ro) / 1000;
@@ -593,6 +612,7 @@
       fov = 28;
       var dr = this.avstand(fov, 0.60);
       oye = [Math.sin(driv) * dr, 0.09 + Math.sin(s * 0.47) * 0.025, Math.cos(driv) * dr];
+      maal = [0, -0.34, 0];
     }
 
     /* Rist i slaget. Tre–fire bilder. Mer leses som en feil. */
@@ -778,7 +798,11 @@
     /* ── Blinket i slaget, og teksten ── */
     var bl = spenn(t, T.slag, T.slag + 150);
     this.blink.style.opacity = (bl > 0 && bl < 1) ? (1 - bl) * 0.5 : 0;
-    this.rot.classList.toggle('lastar-tekst-inne', t > T.sving + 260);
+    this.rot.classList.toggle('lastar-tekst-inne', t > T.merke);
+    /* Steg-teksten er bare til nytte når noe tar uventet lang tid. Går det
+       normalt, rekker du aldri å se den – og da skal den heller ikke ligge
+       der og ta plass fra merket. */
+    this.rot.classList.toggle('lastar-seint', !this.arbeidFerdig && t > T.hald);
     this.visFramgang += (this.framgang - this.visFramgang) * 0.12;
     this.skinne.style.transform = 'scaleX(' + this.visFramgang.toFixed(4) + ')';
 

@@ -287,31 +287,129 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .lastar-flat img { width: 148px; opacity: .92; }
 
 .lastar-tekst {
-  position: absolute; left: 0; right: 0; bottom: calc(76px + var(--trygg-botn));
-  display: flex; flex-direction: column; align-items: center; gap: 14px;
-  opacity: 0; transform: translateY(10px);
-  transition: opacity .55s ease, transform .55s cubic-bezier(.2, .8, .3, 1);
+  position: absolute; left: 0; right: 0; bottom: calc(66px + var(--trygg-botn));
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
   pointer-events: none;
 }
-.lastar-tekst-inne .lastar-tekst { opacity: 1; transform: none; }
 
-.lastar-merke {
-  display: flex; gap: 7px; align-items: baseline;
-  font-size: 13px; font-weight: 900; font-style: italic; letter-spacing: .17em;
+/* ---------- Merket skriver seg ut ----------
+   Alt står skjult til .lastar-tekst-inne blir satt på, og kommer så inn i
+   rekkefølge: navnet sveiper fram, AS-en slår til, båndet skyter ut fra
+   venstre, og de tre ordene lander ett og ett.
+
+   Sveipet er en clip-path, som virker FØR skjevheten. Kanten følger derfor
+   kursivvinkelen av seg selv, i stedet for å gå loddrett gjennom en
+   skråstilt bokstav. */
+.lm-ord span, .lm-band, .lm-band span, .lm-band i, .lastar-skinne {
+  opacity: 0;
 }
-.lastar-merke b { color: #fff; font-weight: 900; }
-.lastar-merke span { color: var(--raud); }
+.lastar-tekst-inne .lm-o1 { animation: ordInn 300ms cubic-bezier(.2,.78,.28,1)  0ms both; }
+.lastar-tekst-inne .lm-o2 { animation: ordInn 300ms cubic-bezier(.2,.78,.28,1) 130ms both; }
+.lastar-tekst-inne .lm-as { animation: asInn  260ms cubic-bezier(.2,1.5,.4,1)  340ms both; }
+.lastar-tekst-inne .lm-band { animation: bandUt 360ms cubic-bezier(.16,.82,.24,1) 430ms both; }
+.lastar-tekst-inne .lm-b1 { animation: ordLand 240ms cubic-bezier(.2,.8,.3,1) 630ms both; }
+.lastar-tekst-inne .lm-p1 { animation: prikk   200ms ease-out                  690ms both; }
+.lastar-tekst-inne .lm-b2 { animation: ordLand 240ms cubic-bezier(.2,.8,.3,1) 710ms both; }
+.lastar-tekst-inne .lm-p2 { animation: prikk   200ms ease-out                  770ms both; }
+.lastar-tekst-inne .lm-b3 { animation: ordLand 240ms cubic-bezier(.2,.8,.3,1) 790ms both; }
+.lastar-tekst-inne .lastar-skinne { animation: tonInn 400ms ease 560ms both; }
+
+@keyframes ordInn {
+  from { opacity: 0; clip-path: inset(0 100% 0 0); transform: skewX(-5deg) translateX(-10px); }
+  to   { opacity: 1; clip-path: inset(0 -4% 0 0);  transform: skewX(-5deg) translateX(0); }
+}
+@keyframes asInn {
+  from { opacity: 0; transform: skewX(-5deg) scale(.4); }
+  to   { opacity: .92; transform: skewX(-5deg) scale(1); }
+}
+/* Båndet skyter ut fra venstre og stopper hardt. Skjevheten må bli med i
+   hver keyframe – en transform erstatter, den legger seg ikke oppå. */
+@keyframes bandUt {
+  from { opacity: 1; transform: skewX(-12deg) scaleX(0); }
+  to   { opacity: 1; transform: skewX(-12deg) scaleX(1); }
+}
+@keyframes ordLand {
+  from { opacity: 0; transform: skewX(12deg) translateY(5px); }
+  to   { opacity: 1; transform: skewX(12deg) translateY(0); }
+}
+@keyframes prikk {
+  from { opacity: 0; transform: scale(0); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes tonInn { from { opacity: 0; } to { opacity: 1; } }
+
+/* Uten WebGL står merket ferdig med en gang – da er det ingen film å
+   koreografere det mot. */
+.lastar-enkel .lm-ord span,
+.lastar-enkel .lm-band,
+.lastar-enkel .lm-band span,
+.lastar-enkel .lm-band i,
+.lastar-enkel .lastar-skinne { opacity: 1; animation: none; }
+
+/* ---------- Ordmerket ----------
+   Bygget av elementer, ikke ett bilde, slik at delene kan komme inn hver
+   for seg.
+
+   På hvitt er ordmerket svart og bransjebåndet svart med hvit tekst. På
+   svart ville båndet forsvinne, så det er snudd: ordmerket og båndet
+   holder fortsatt samme farge som hverandre, teksten i båndet den
+   motsatte. Forholdet i logoen er beholdt, verdiene er snudd.
+
+   Båndet er et PARALLELLOGRAM, ikke et rektangel – det er den mest
+   gjenkjennelige formen i merket. Det skråstilles, og teksten inni
+   skråstilles tilbake så den blir stående kursiv og ikke dobbelt skjev. */
+.lastar-merke {
+  display: flex; flex-direction: column; align-items: center; gap: 7px;
+}
+
+.lm-ord {
+  display: flex; align-items: flex-start; gap: .16em;
+  font-size: 31px; font-weight: 900; font-style: italic;
+  letter-spacing: -.025em; line-height: 1;
+  color: #fff;
+}
+/* Systemets kursiv heller mindre enn merket. Den ekstra skjevheten tar
+   igjen resten, og bokstavformene er nærme nok på både Roboto og SF. */
+.lm-ord span { display: block; transform: skewX(-5deg); }
+.lm-as {
+  font-size: 11px; letter-spacing: 0; align-self: flex-start;
+  margin-top: .18em; opacity: .92;
+}
+
+.lm-band {
+  display: flex; align-items: center; gap: 7px;
+  background: #fff;
+  padding: 3px 11px 4px;
+  transform: skewX(-12deg);
+  transform-origin: left center;
+}
+.lm-band span {
+  display: block; transform: skewX(12deg);
+  font-size: 8.5px; font-weight: 800; font-style: italic;
+  letter-spacing: .1em; color: #0a0a0c; white-space: nowrap;
+}
+.lm-band i {
+  display: block; width: 3px; height: 3px; border-radius: 50%;
+  background: #0a0a0c; flex: 0 0 auto;
+}
 
 /* Skinna fylles av EKTE framgang: innloggingssjekken, så sidelista.
-   Den er ikke en tidtaker som later som. */
+   Den er ikke en tidtaker som later som. Den er ikke en del av merket –
+   logoen har ingen rød strek – så den holder seg tynn og for seg selv. */
 .lastar-skinne {
-  width: 132px; height: 2px; background: #ffffff1c; overflow: hidden; border-radius: 2px;
+  width: 108px; height: 1px; background: #ffffff14; overflow: hidden;
+  margin-top: 5px;
 }
 .lastar-skinne i {
   display: block; height: 100%; background: var(--raud);
   transform: scaleX(0); transform-origin: left;
 }
-.lastar-steg { font-size: 11px; letter-spacing: .06em; color: #5c5c68; }
+.lastar-steg {
+  font-size: 11px; letter-spacing: .06em; color: #5c5c68;
+  height: 0; opacity: 0; overflow: hidden;
+  transition: opacity .4s ease, height .4s ease;
+}
+.lastar-seint .lastar-steg { height: 16px; opacity: 1; }
 
 /* Utgangen: skjermen skyves mot deg og slipper. */
 .lastar-ut { opacity: 0; transform: scale(1.06); pointer-events: none; }
