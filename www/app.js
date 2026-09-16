@@ -319,12 +319,14 @@ function klarerteOpphav() {
    ikke bli en seremoni du må gjennom femti ganger om dagen. */
 function visSideFilm(side) {
   if (!window.HM_LASTAR) return null;
-  let vert = '';
-  try { vert = new URL(side.url).hostname.replace(/^www\./, '').toUpperCase(); } catch { /* uten */ }
   if (bakgrunn) bakgrunn.pause(true);
+  /* Sidas eget navn og gruppa den står i – de samme ordene som i lista.
+     Her stod adressen en kort stund, men et domene er ikke det vi kaller
+     sida. Du trykket på «Grus / transportregistrering», og da er det det
+     du skal se mens den åpner seg. */
   return window.HM_LASTAR.lag(document.body, {
     tittel: side.name,
-    band: vert,
+    band: (side.group || '').toUpperCase(),
     fart: 2.4
   }).start();
 }
