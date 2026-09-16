@@ -4,7 +4,7 @@
 
 const SIDER_URL =
   'https://raw.githubusercontent.com/thomashauge03/hauge-maskin-app/main/sider.json';
-const VERSJON = '1.12.0';
+const VERSJON = '1.13.0';
 
 /* Den lagrede lista hører til én bruker, ikke til telefonen.
    Logger Ola ut og Kari inn på samme telefon, ville Kari sett Olas liste
@@ -340,18 +340,27 @@ async function opneSide(side) {
   const cap = window.Capacitor;
   const film = visSideFilm(side);
 
-  /* Filmen får aldri stå i veien for sida. Svarer ikke oppstarten, slipper
-     den taket etter dette og du er tilbake i lista. */
-  const slipp = async () => {
-    if (!film) return;
-    await medTak(film.ferdig(), 3000);
-    if (bakgrunn) bakgrunn.pause(false);
-  };
+  /* Nettleseren startes opp MENS sekvensen går.
+     Chrome kald er den dyre delen, og den kostet før midt i det brukeren så
+     på en tom skjerm. Nå skjer den bak animasjonen. Se forvarm i
+     TwaPlugin.java – det er prosessen som varmes, ikke sida. */
+  try {
+    const { Twa } = (cap && cap.Plugins) || {};
+    if (Twa && Twa.forvarm) Twa.forvarm();
+  } catch { /* uten forvarming går alt som før */ }
+
+  /* Hele sekvensen skal sees. Startet vi nettleseren med en gang, la Chrome
+     seg over etter et halvt sekund og resten ble aldri vist.
+     Vi venter til den er SPILT UT – ikke til den er ryddet bort. Rev vi
+     henne her, ville lista blinket fram i mellomrommet før Chrome kom. */
+  if (film) await medTak(film.spelt(), 4000);
 
   try {
     await opneSideNo(url, cap);
   } finally {
-    await slipp();
+    /* Ryddes bak nettleseren, der ingen ser det. */
+    if (film) film.ferdig();
+    if (bakgrunn) bakgrunn.pause(false);
   }
 }
 

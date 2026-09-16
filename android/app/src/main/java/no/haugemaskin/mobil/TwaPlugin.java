@@ -34,6 +34,36 @@ public class TwaPlugin extends Plugin {
 
     private TwaLauncher launcher;
 
+    /**
+     * Startar nettlesaren i bakgrunnen, utan å vise noko.
+     *
+     * TwaLauncher sin konstruktør bind seg til Custom Tabs-tenesta og kallar
+     * warmup() når sambandet er oppe. Det er der den dyre delen ligg: å
+     * starte Chrome-prosessen kald. Gjer vi det først i det brukaren trykkjer,
+     * betaler han for oppstarten mens han ser på ein tom skjerm.
+     *
+     * Kalla vi dette medan opningssekvensen går, er prosessen varm når
+     * sekvensen slepp taket.
+     *
+     * Merk kva dette IKKJE er: prerender av sjølve sida. mayLaunchUrl krev
+     * økta som launcheren startar med, og TwaLauncher gir henne ikkje frå seg
+     * – access$300 er pakkeprivat. Ei eiga økt ville fått sin eigen prerender
+     * kasta i det launcheren startar med si. Det er difor dette varmar
+     * prosessen og ikkje sida.
+     */
+    @PluginMethod
+    public void forvarm(PluginCall call) {
+        try {
+            if (launcher == null) {
+                launcher = new TwaLauncher(getActivity());
+            }
+        } catch (Exception ignored) {
+            // Ingen nettlesar med støtte. open() fell tilbake som før.
+        }
+        // Svarar med ein gong uansett. Den som kallar skal ikkje vente på oss.
+        call.resolve();
+    }
+
     @PluginMethod
     public void open(PluginCall call) {
         String url = call.getString("url");

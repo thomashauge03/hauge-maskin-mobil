@@ -839,6 +839,7 @@
     this.visFramgang += (this.framgang - this.visFramgang) * 0.12;
     this.skinne.style.transform = 'scaleX(' + this.visFramgang.toFixed(4) + ')';
 
+    if (this.speltOk && t >= T.hald) { var ok = this.speltOk; this.speltOk = null; ok(); }
     if (this.arbeidFerdig && t >= T.hald) { this.avslutt(); return; }
     this.ramme = requestAnimationFrame(function (x) { meg.teikn(x); });
   };
@@ -846,6 +847,23 @@
   Lastar.prototype.sett = function (del, tekst) {
     this.framgang = Math.max(this.framgang, Math.min(1, del));
     if (tekst && this.steg) this.steg.textContent = tekst;
+  };
+
+  /* «Spilt ut» er ikke det samme som «ryddet bort».
+     Den som åpner en side må vente til hele sekvensen er sett, MEN holde
+     den liggende til nettleseren faktisk er oppe. Rev vi henne ved siste
+     bilde, ville lista blinket fram i mellomrommet før Chrome kom. */
+  Lastar.prototype.spelt = function () {
+    var meg = this;
+    if (this.speltLovnad) return this.speltLovnad;
+    this.speltLovnad = new Promise(function (ok) {
+      if (meg.avslutta) return ok();
+      meg.speltOk = ok;
+      /* Uten WebGL eller modell finnes ingen tegneløkke som kan melde fra. */
+      setTimeout(function () { if (meg.speltOk) { meg.speltOk = null; ok(); } },
+                 (T.hald + 600) / meg.fart);
+    });
+    return this.speltLovnad;
   };
 
   Lastar.prototype.ferdig = function () {
