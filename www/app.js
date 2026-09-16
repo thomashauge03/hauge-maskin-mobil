@@ -4,7 +4,7 @@
 
 const SIDER_URL =
   'https://raw.githubusercontent.com/thomashauge03/hauge-maskin-app/main/sider.json';
-const VERSJON = '1.7.2';
+const VERSJON = '1.8.0';
 
 /* Den lagrede lista hører til én bruker, ikke til telefonen.
    Logger Ola ut og Kari inn på samme telefon, ville Kari sett Olas liste
@@ -232,16 +232,16 @@ function teikn() {
       rad.className = 'rad';
       rad.appendChild(ikonFor(p, 'rad-ikon'));
 
+      /* Bare navnet i lista.
+         Forklaringa stod her før, men den fikk aldri plass – den ble kappet
+         midt i et ord på hver eneste rad, og da er den pynt og ikke
+         opplysning. Den står i sin helhet i detaljarket, som du får ved å
+         holde inne. */
       const tekst = document.createElement('div');
       tekst.className = 'rad-tekst';
       const n = document.createElement('strong');
       n.textContent = p.name;
       tekst.appendChild(n);
-      if (p.help) {
-        const u = document.createElement('span');
-        u.textContent = p.help;
-        tekst.appendChild(u);
-      }
       rad.appendChild(tekst);
 
       const pil = document.createElement('span');
@@ -449,6 +449,22 @@ function visArk(side) {
 
 /* ---------- Hendelser ---------- */
 $('sok').addEventListener('input', teikn);
+
+/* Søkefeltet folder seg ut fra knappen i toppen.
+   Lukker du det, tømmer vi søket – ellers står appen igjen med en filtrert
+   liste og ingenting på skjermen som forklarer hvorfor. */
+$('btnSok').addEventListener('click', () => {
+  const felt = $('sokefelt');
+  const opnar = felt.hidden;
+  felt.hidden = !opnar;
+  $('btnSok').setAttribute('aria-expanded', String(opnar));
+  if (opnar) {
+    $('sok').focus();
+  } else if ($('sok').value) {
+    $('sok').value = '';
+    teikn();
+  }
+});
 $('btnOppdater').addEventListener('click', () => hentSider());
 $('btnProvIgjen').addEventListener('click', () => hentSider());
 

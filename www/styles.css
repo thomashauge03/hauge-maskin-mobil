@@ -1,11 +1,14 @@
 :root {
   --raud: #e2001a;
-  --botn: #0d0d0f;
-  --botn-2: #131317;
+  --botn: #0a0a0c;
+  --botn-2: #141418;
   --botn-3: #1a1a20;
-  --strek: #26262e;
-  --tekst: #f2f2f5;
-  --dempa: #8a8a97;
+  --strek: #23232b;
+  /* Skillelinja mellom rader skal så vidt finnes. Den holder lista sortert,
+     den skal ikke tegne et rutenett. */
+  --skilje: #1a1a20;
+  --tekst: #f4f4f7;
+  --dempa: #7c7c8a;
   --trygg-topp: env(safe-area-inset-top, 0px);
   --trygg-botn: env(safe-area-inset-bottom, 0px);
 }
@@ -35,18 +38,18 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 
 /* ---------- Topp ---------- */
 .topp {
-  display: flex; align-items: center; gap: 12px;
-  padding: 14px 16px 12px;
-  background: linear-gradient(180deg, #121216, #0d0d0f);
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px;
+  background: var(--botn);
   border-bottom: 1px solid var(--strek);
   position: sticky; top: var(--trygg-topp); z-index: 10;
 }
-.logo { height: 30px; width: auto; display: block; }
+.logo { height: 26px; width: auto; display: block; }
 .tittel { display: flex; flex-direction: column; line-height: 1.02; font-style: italic; flex: 1; }
 .tittel strong { font-size: 14px; font-weight: 900; letter-spacing: .05em; }
 .tittel span { font-size: 14px; font-weight: 900; letter-spacing: .05em; color: var(--raud); }
 .ikonknapp {
-  width: 40px; height: 40px; border-radius: 12px;
+  width: 36px; height: 36px; border-radius: 3px;
   display: grid; place-items: center; color: var(--dempa);
   background: #ffffff0a;
 }
@@ -73,15 +76,19 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .ikonknapp.liten { width: 32px; height: 32px; border-radius: 10px; }
 .ikonknapp.liten svg { width: 15px; height: 15px; }
 
-/* ---------- Søk ---------- */
-.sokefelt { position: relative; padding: 12px 16px 4px; }
+/* ---------- Søk ----------
+   Feltet står ikke framme. Med fjorten sider leser du fortere enn du
+   søker, og øverst på skjermen er den dyreste plassen appen har.
+   Søkeknappen i toppen folder det ut. */
+.sokefelt { position: relative; padding: 10px 14px 2px; }
+.sokefelt[hidden] { display: none; }
 .sok-ikon {
-  position: absolute; left: 30px; top: 50%; transform: translateY(-30%);
-  width: 17px; height: 17px; color: var(--dempa); pointer-events: none;
+  position: absolute; left: 28px; top: 50%; transform: translateY(-40%);
+  width: 16px; height: 16px; color: var(--dempa); pointer-events: none;
 }
 #sok {
-  width: 100%; padding: 13px 14px 13px 40px;
-  background: var(--botn-3); border: 1px solid var(--strek); border-radius: 14px;
+  width: 100%; padding: 11px 14px 11px 38px;
+  background: var(--botn-2); border: 1px solid var(--strek); border-radius: 3px;
   color: var(--tekst); font-size: 16px; outline: none;
   -webkit-appearance: none;
 }
@@ -89,38 +96,49 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 #sok::placeholder { color: #62626e; }
 
 /* ---------- Lista ---------- */
-.liste { flex: 1; padding: 8px 12px 20px; }
+.liste { flex: 1; padding: 0 0 16px; }
 
+/* Streken tvers over gjør at du ser hvor en bolk begynner uten å lese
+   overskriften. Tidligere var den en liten grå tekst som fløt i lufta. */
 .gruppe {
-  font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
-  color: #5c5c68; padding: 18px 8px 8px;
+  display: flex; align-items: center; gap: 10px;
+  padding: 20px 14px 8px;
+  font-size: 10px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+  color: #5a5a68;
 }
+.gruppe::after { content: ""; flex: 1; height: 1px; background: var(--strek); }
 
+/* Rader, ikke kort.
+   Kortene ga åtte piksler luft mellom hver, ramme rundt hver, og seks
+   synlige rader på en telefon. Dette gir elleve. For en app som bare er
+   en vei videre til noe annet, er det å se alt på én gang hele poenget. */
 .rad {
-  display: flex; align-items: center; gap: 14px; width: 100%;
-  padding: 14px 14px; margin-bottom: 8px;
-  background: var(--botn-2); border: 1px solid var(--strek); border-radius: 16px;
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 11px 14px;
+  background: transparent;
+  border: 0; border-bottom: 1px solid var(--skilje);
+  border-left: 3px solid transparent;
   text-align: left; color: var(--tekst);
-  transition: transform .08s, background .12s;
+  transition: background .1s, border-left-color .1s;
 }
-.rad:active { transform: scale(.98); background: #1e1e25; }
+/* Rødt som signal, ikke pynt: kanten sier hva du traff. Den gamle
+   krympingen av hele kortet var treg og upresis på en stor finger. */
+.rad:active { background: var(--botn-2); border-left-color: var(--raud); }
+
 .rad-ikon {
-  width: 44px; height: 44px; flex: 0 0 auto; border-radius: 12px;
+  width: 32px; height: 32px; flex: 0 0 auto; border-radius: 3px;
   background: #ffffff0d; display: grid; place-items: center; overflow: hidden;
 }
-.rad-ikon img { max-width: 34px; max-height: 34px; object-fit: contain; }
-.rad-ikon .bokstav { font-size: 19px; font-weight: 900; font-style: italic; color: #fff; }
-.rad-tekst { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.rad-ikon img { max-width: 26px; max-height: 26px; object-fit: contain; }
+.rad-ikon .bokstav { font-size: 14px; font-weight: 900; font-style: italic; color: #fff; }
+.rad-tekst { flex: 1; min-width: 0; }
 .rad-tekst strong {
-  font-size: 16px; font-weight: 600; line-height: 1.25;
+  display: block; font-size: 15.5px; font-weight: 600; letter-spacing: -.01em;
+  line-height: 1.3;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.rad-tekst span {
-  font-size: 12.5px; color: var(--dempa);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.rad-pil { color: #4a4a55; flex: 0 0 auto; }
-.rad-pil svg { width: 18px; height: 18px; }
+.rad-pil { color: #3a3a46; flex: 0 0 auto; }
+.rad-pil svg { width: 16px; height: 16px; stroke-width: 2.5; }
 
 /* ---------- Tomt / laster ---------- */
 .tomt {
@@ -143,9 +161,9 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 /* ---------- Botn ---------- */
 .botn {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 16px calc(10px + var(--trygg-botn));
-  border-top: 1px solid var(--strek); background: var(--botn-2);
-  font-size: 11.5px; color: #5c5c68;
+  padding: 10px 14px calc(10px + var(--trygg-botn));
+  border-top: 1px solid var(--strek); background: var(--botn);
+  font-size: 11px; color: #4e4e5a; letter-spacing: .02em;
 }
 .botn .tekstknapp { padding: 4px 8px; font-size: 12px; }
 

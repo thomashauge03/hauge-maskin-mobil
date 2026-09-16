@@ -1,6 +1,6 @@
 {
   "_om": "Nyeste versjon av mobilappen. Appen sjekker denne fila ved oppstart og sier fra når det finnes noe nytt. Blir oppdatert når en ny versjon blir bygd.",
-  "versjon": "1.7.2",
-  "apk": "https://github.com/thomashauge03/hauge-maskin-mobil/releases/latest/download/Hauge-Maskin-1.7.2.apk",
-  "endringar": "Topplinja ligger nå riktig under statuslinja. Forrige forsøk virket ikke."
+  "versjon": "1.8.0",
+  "apk": "https://github.com/thomashauge03/hauge-maskin-mobil/releases/latest/download/Hauge-Maskin-1.8.0.apk",
+  "endringar": "Tettere liste - du ser dobbelt så mange sider på skjermen. Søket har flyttet til en knapp i toppen."
 }

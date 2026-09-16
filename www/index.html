@@ -101,6 +101,9 @@
     <div class="tittel">
       <strong>HAUGE</strong><span>MASKIN</span>
     </div>
+    <button id="btnSok" class="ikonknapp" aria-label="Søk etter side" aria-expanded="false">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+    </button>
     <button id="btnOppdater" class="ikonknapp" aria-label="Hent sidene på nytt">
       <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 4v7h-7"/></svg>
     </button>
@@ -130,7 +133,8 @@
     </button>
   </div>
 
-  <div class="sokefelt">
+  <!-- Folder seg ut fra søkeknappen i toppen. Se .sokefelt i styles.css. -->
+  <div class="sokefelt" id="sokefelt" hidden>
     <svg class="sok-ikon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
     <input id="sok" type="search" placeholder="Søk etter side…" autocomplete="off" enterkeyhint="search" />
   </div>
