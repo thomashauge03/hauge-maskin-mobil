@@ -30,6 +30,7 @@ public class MainActivity extends BridgeActivity {
         // capacitor.plugins.json blir generert fra node_modules og får aldri
         // med seg plugins som ligger i dette prosjektet. Derfor manuelt her.
         registerPlugin(TwaPlugin.class);
+        registerPlugin(NokkelPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }
