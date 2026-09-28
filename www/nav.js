@@ -222,9 +222,11 @@ async function minStatus() {
   if (!Array.isArray(json) || json.length === 0) return { tilstand: 'utanPerson' };
 
   const rad = json[0];
-  if (rad.status === 'godkjent') return { tilstand: 'godkjent', navn: rad.navn };
-  if (rad.status === 'sperra') return { tilstand: 'sperra', navn: rad.navn };
-  return { tilstand: 'ventar', navn: rad.navn };
+  // E-posten blir med, så nøkkelen i Om-arket kan foreslå den
+  const hvem = { navn: rad.navn, epost: rad.epost || null };
+  if (rad.status === 'godkjent') return { tilstand: 'godkjent', ...hvem };
+  if (rad.status === 'sperra') return { tilstand: 'sperra', ...hvem };
+  return { tilstand: 'ventar', ...hvem };
 }
 
 /* ---------- Hvilke sider er mine? ----------

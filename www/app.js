@@ -339,7 +339,7 @@ async function opneSide(side) {
   if (film) await medTak(film.spelt(), 4000);
 
   try {
-    await opneSideNo(url, cap);
+    await opneSideNo(side, url, cap);
   } finally {
     /* Ryddes bak nettleseren, der ingen ser det. */
     if (film) film.ferdig();
@@ -347,7 +347,7 @@ async function opneSide(side) {
   }
 }
 
-async function opneSideNo(url, cap) {
+async function opneSideNo(side, url, cap) {
   if (cap && cap.isNativePlatform && cap.isNativePlatform()) {
     // Våre egne system åpner seg i fullskjerm uten adresselinje, dersom
     // domenet beviser at det hører til appen. Mangler beviset, gjør Chrome
@@ -356,7 +356,9 @@ async function opneSideNo(url, cap) {
     try {
       const { Twa } = cap.Plugins || {};
       if (Twa && Twa.open) {
-        await Twa.open({ url, origins: klarerteOpphav() });
+        // Nøkkelbryteren følger med. En lagret liste fra før 1.16.0 har
+        // ikke feltet, og da er den på – samme regel som i sider.json.
+        await Twa.open({ url, origins: klarerteOpphav(), nokkel: side.nokkel !== false });
         return;
       }
     } catch (err) {
@@ -581,9 +583,61 @@ $('btnOm').addEventListener('click', () => {
   $('omSjekk').dataset.gaar = '';
   $('omSjekkSvar').textContent = 'Sjekk →';
   $('om').hidden = false;
+  oppdaterNokkelRad();
 });
 $('omLukk').addEventListener('click', () => { $('om').hidden = true; });
 $('om').addEventListener('click', (e) => { if (e.target === $('om')) $('om').hidden = true; });
+
+/* ---------- Nøkkelen ----------
+   Én felles innlogging som 🔑-knappen i systemene fyller inn. Passordet kan
+   skrives inn her, men aldri leses tilbake – se nokkel.js. */
+async function oppdaterNokkelRad() {
+  const rad = $('omNokkel');
+  rad.hidden = !window.HM_NOKKEL.finst();
+  if (rad.hidden) return;
+  const epost = await window.HM_NOKKEL.status();
+  $('omNokkelSvar').textContent = epost || 'Legg inn →';
+}
+
+async function visNokkelArk() {
+  const epost = await window.HM_NOKKEL.status();
+  // Den du er logget inn i appen med er den beste gjetningen
+  $('nokkelEpost').value = epost || mittEpost || '';
+  $('nokkelPassord').value = '';
+  $('nokkelPassord').placeholder = epost ? 'Nytt passord' : 'Passord';
+  $('nokkelFjern').hidden = !epost;
+  visPortFeil('nokkelFeil', '');
+  $('om').hidden = true;
+  $('nokkelArk').hidden = false;
+}
+
+// Passordet skal ikke bli liggende i et skjult felt
+function lukkNokkelArk() {
+  $('nokkelPassord').value = '';
+  $('nokkelArk').hidden = true;
+}
+
+$('omNokkel').addEventListener('click', visNokkelArk);
+$('nokkelLukk').addEventListener('click', lukkNokkelArk);
+$('nokkelArk').addEventListener('click', (e) => { if (e.target === $('nokkelArk')) lukkNokkelArk(); });
+
+$('skjemaNokkel').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const knapp = e.target.querySelector('button[type=submit]');
+  knapp.disabled = true;
+  visPortFeil('nokkelFeil', '');
+  const svar = await window.HM_NOKKEL.lagre($('nokkelEpost').value.trim(), $('nokkelPassord').value);
+  knapp.disabled = false;
+  if (!svar.ok) { visPortFeil('nokkelFeil', svar.feil); return; }
+  lukkNokkelArk();
+  oppdaterNokkelRad();
+});
+
+$('nokkelFjern').addEventListener('click', async () => {
+  await window.HM_NOKKEL.fjern();
+  lukkNokkelArk();
+  oppdaterNokkelRad();
+});
 
 /* ---------- Porten ---------- */
 const PORT_DELAR = [
@@ -592,6 +646,7 @@ const PORT_DELAR = [
 ];
 
 let meg = null;
+let mittEpost = null;
 let appenGaar = false;
 
 function visPortDel(id) {
@@ -616,6 +671,7 @@ async function avgjerPort() {
   visPortDel('portLastar');
   const svar = await window.HM_NAV.minStatus();
   meg = svar.navn || null;
+  mittEpost = svar.epost || null;
 
   switch (svar.tilstand) {
     case 'godkjent':
@@ -683,12 +739,13 @@ function startBakgrunn() {
        satt bakgrunnen i gang igjen bak filmen første gang noe annet rørte
        seg – og da tegner vi noe ingen ser. */
     bakgrunn.pause(
-      !$('ark').hidden || !$('om').hidden || !$('port').hidden || !$('paabudt').hidden ||
+      !$('ark').hidden || !$('om').hidden || !$('nokkelArk').hidden ||
+      !$('port').hidden || !$('paabudt').hidden ||
       !!document.querySelector('.lastar')
     );
   };
   const vakt = new MutationObserver(sjaa);
-  for (const id of ['ark', 'om', 'port', 'paabudt']) {
+  for (const id of ['ark', 'om', 'nokkelArk', 'port', 'paabudt']) {
     vakt.observe($(id), { attributes: true, attributeFilter: ['hidden'] });
   }
   sjaa();
@@ -789,14 +846,19 @@ $('skjemaNy').addEventListener('submit', async (e) => {
 });
 
 async function loggUtOgTilbake() {
+  /* Nøkkelen først. Neste person på telefonen skal ikke arve den, og den
+     skal bort selv om navet ikke svarer på utloggingen. */
+  await window.HM_NOKKEL.fjern();
   await window.HM_NAV.loggUt();
   tomLokalt();
   meg = null;
+  mittEpost = null;
   appenGaar = false;
   /* Rives, ikke bare pauses. Den som logger ut skal ikke ha en WebGL-
      kontekst gående bak innloggingsskjermen. */
   stoppBakgrunn();
   $('om').hidden = true;
+  lukkNokkelArk();
   visPortFeil('loginFeil', '');
   visPortDel('portLogin');
 }

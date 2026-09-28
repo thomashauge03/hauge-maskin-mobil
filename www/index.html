@@ -197,6 +197,9 @@
       <button class="om-rad om-knapp" id="omSjekk">
         <span>Se etter oppdateringer</span><b id="omSjekkSvar">Sjekk →</b>
       </button>
+      <button class="om-rad om-knapp" id="omNokkel" hidden>
+        <span>Nøkkel for innlogging</span><b id="omNokkelSvar">–</b>
+      </button>
       <div class="om-rad"><span>Felles sider</span><b id="omSider">–</b></div>
       <div class="om-rad"><span>Sist hentet</span><b id="omSynk">–</b></div>
       <a class="om-rad" href="personvern.html" style="text-decoration:none">
@@ -208,7 +211,30 @@
     </div>
   </div>
 
+  <!-- Nøkkelen: én felles innlogging som 🔑-knappen i systemene fyller inn.
+       Passordet kan skrives inn her, men aldri leses tilbake. Se nokkel.js. -->
+  <div id="nokkelArk" class="ark-bakgrunn" hidden>
+    <div class="ark">
+      <div class="ark-drag"></div>
+      <h2>Nøkkel for innlogging</h2>
+      <p class="ark-hjelp">
+        Åpner du et av systemene våre fra appen, får innloggingen en
+        🔑-knapp som fyller inn dette. Nøkkelen ligger kryptert på denne
+        telefonen, blir aldri sendt noe sted, og slettes når du logger ut.
+      </p>
+      <form id="skjemaNokkel" class="port-skjema">
+        <input id="nokkelEpost" type="email" autocomplete="username" placeholder="E-post" required />
+        <input id="nokkelPassord" type="password" autocomplete="current-password" placeholder="Passord" required />
+        <p id="nokkelFeil" class="port-feil" hidden></p>
+        <button type="submit" class="knapp knapp-stor">Lagre</button>
+      </form>
+      <button id="nokkelFjern" class="tekstknapp midtstilt" hidden>Fjern nøkkelen</button>
+      <button id="nokkelLukk" class="tekstknapp midtstilt">Lukk</button>
+    </div>
+  </div>
+
   <script src="nav.js"></script>
+  <script src="nokkel.js"></script>
   <script src="lastar.js"></script>
   <script src="sidelista.js"></script>
   <script src="oppdatering.js"></script>
