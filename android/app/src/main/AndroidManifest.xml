@@ -40,4 +40,13 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Chrome-kanalene. Appen sjekker signaturen deres før den gir fra seg
+         nøkkelen, og fra Android 11 ser den dem bare når de står her. -->
+    <queries>
+        <package android:name="com.android.chrome" />
+        <package android:name="com.chrome.beta" />
+        <package android:name="com.chrome.dev" />
+        <package android:name="com.chrome.canary" />
+    </queries>
 </manifest>

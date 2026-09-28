@@ -71,6 +71,13 @@ test('et ødelagt minimum stenger ingen ute', () => {
   assert.equal(svar.tilstand, 'ok');
 });
 
+test('et minimum over nyeste versjon blir tatt ned til nyeste', () => {
+  // En skrivefeil – 1.61.0 for 1.16.0 – skal ikke kreve en versjon som ikke finnes
+  const svar = vurder({ installert: '1.16.0', info: { versjon: '1.16.0', minimum: '1.61.0' }, huska: null });
+  assert.equal(svar.tilstand, 'ok');
+  assert.equal(svar.minimum, '1.16.0');
+});
+
 test('1.10.0 er nyere enn 1.9.0 – tallene sammenlignes, ikke teksten', () => {
   assert.equal(nyareEnn('1.10.0', '1.9.0'), true);
   assert.equal(nyareEnn('1.9.0', '1.10.0'), false);

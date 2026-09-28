@@ -25,12 +25,16 @@
      påbudt oppdatering ved å skru av nettet.
 
      Et minimum som ikke er et versjonsnummer blir aldri «nyere» enn noe, og
-     stenger derfor ingen ute. Feil i fila skal gi et rødt felt for mye, ikke
-     en låst app. */
+     stenger derfor ingen ute. Et minimum over nyeste versjon blir tatt ned
+     til nyeste – en skrivefeil skal ikke kreve en versjon som ikke finnes.
+     Feil i fila skal gi et rødt felt for mye, ikke en låst app. */
   function vurder({ installert, info, huska }) {
-    const minimum = info
+    let minimum = info
       ? (info.minimum ? String(info.minimum) : null)
       : (huska || null);
+    if (info && minimum && info.versjon && nyareEnn(minimum, info.versjon)) {
+      minimum = String(info.versjon);
+    }
 
     if (minimum && nyareEnn(minimum, installert)) return { tilstand: 'maa', minimum };
     if (info && nyareEnn(info.versjon, installert)) return { tilstand: 'kan', minimum };

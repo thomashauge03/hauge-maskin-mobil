@@ -16,6 +16,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.security.KeyStore;
+
 /**
  * Nøkkelhvelvet mot ekte Android Keystore. Trenger telefon eller emulator:
  * gradlew :app:connectedDebugAndroidTest
@@ -44,31 +46,43 @@ public class NokkelhvelvTest {
 
     @Test
     public void en_lagret_nokkel_kan_leses_tilbake() throws Exception {
-        hvelv.lagre("ola@hauge.no", "hemmelig-æøå");
+        hvelv.lagre("ola@hauge.no", "hemmelig-æøå", "bruker-1");
         Nokkelhvelv.Nokkel n = hvelv.les();
         assertNotNull(n);
         assertEquals("ola@hauge.no", n.epost);
         assertEquals("hemmelig-æøå", n.passord);
+        assertEquals("bruker-1", n.eier);
     }
 
     @Test
     public void en_fjernet_nokkel_er_borte() throws Exception {
-        hvelv.lagre("ola@hauge.no", "x");
+        hvelv.lagre("ola@hauge.no", "x", "bruker-1");
         hvelv.fjern();
         assertNull(hvelv.les());
     }
 
     @Test
     public void ingenting_ligger_lesbart_paa_disk() throws Exception {
-        hvelv.lagre("ola@hauge.no", "hemmelig");
+        hvelv.lagre("ola@hauge.no", "hemmelig", "bruker-1");
         String blokk = lager().getString("blokk", "");
         assertFalse(blokk.contains("hemmelig"));
         assertFalse(blokk.contains("ola@"));
+        assertFalse(blokk.contains("bruker-1"));
     }
 
     @Test
     public void en_uleselig_blokk_blir_ryddet_bort() {
         lager().edit().putString("blokk", "tull:tull").commit();
+        assertNull(hvelv.les());
+        assertFalse(lager().contains("blokk"));
+    }
+
+    @Test
+    public void uten_keystore_noekkelen_blir_blokken_ryddet_bort() throws Exception {
+        hvelv.lagre("ola@hauge.no", "hemmelig", "bruker-1");
+        KeyStore ks = KeyStore.getInstance("AndroidKeyStore");
+        ks.load(null);
+        ks.deleteEntry("hm-nokkel");
         assertNull(hvelv.les());
         assertFalse(lager().contains("blokk"));
     }

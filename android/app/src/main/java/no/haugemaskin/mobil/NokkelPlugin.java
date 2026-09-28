@@ -25,16 +25,22 @@ public class NokkelPlugin extends Plugin {
         hvelv = new Nokkelhvelv(getContext());
     }
 
+    /** { epost, passord, eier } – eier er brukeren i appen, se Nokkelhvelv. */
     @PluginMethod
     public void lagre(PluginCall call) {
         String epost = call.getString("epost", "").trim();
         String passord = call.getString("passord", "");
+        String eier = call.getString("eier", "").trim();
         if (epost.isEmpty() || passord.isEmpty()) {
             call.reject("Både e-post og passord må fylles ut.");
             return;
         }
+        if (eier.isEmpty()) {
+            call.reject("Logg inn i appen før du legger inn nøkkelen.");
+            return;
+        }
         try {
-            hvelv.lagre(epost, passord);
+            hvelv.lagre(epost, passord, eier);
             JSObject ut = new JSObject();
             ut.put("ok", true);
             call.resolve(ut);
@@ -43,11 +49,13 @@ public class NokkelPlugin extends Plugin {
         }
     }
 
+    /** { epost, eier } – aldri passordet. Begge er null uten nøkkel. */
     @PluginMethod
     public void status(PluginCall call) {
         Nokkelhvelv.Nokkel n = hvelv.les();
         JSObject ut = new JSObject();
         ut.put("epost", n == null ? JSONObject.NULL : n.epost);
+        ut.put("eier", n == null ? JSONObject.NULL : n.eier);
         call.resolve(ut);
     }
 

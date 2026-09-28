@@ -339,7 +339,9 @@ async function opneSide(side) {
   if (film) await medTak(film.spelt(), 4000);
 
   try {
-    await opneSideNo(side, url, cap);
+    /* Med tak: svarer ikke nettleseren, skal sekvensen likevel slippe. Den
+       ligger over hele appen, og uten tak ville appen sett frossen ut. */
+    await medTak(opneSideNo(side, url, cap), 8000);
   } finally {
     /* Ryddes bak nettleseren, der ingen ser det. */
     if (film) film.ferdig();
@@ -407,6 +409,8 @@ const erNativ = () => {
   return !!(c && c.isNativePlatform && c.isNativePlatform());
 };
 const erAndroid = () => /android/i.test(navigator.userAgent);
+// Den installerte Android-appen – den eneste som har en APK å oppdatere
+const erAndroidApp = () => erNativ() && window.Capacitor.getPlatform() === 'android';
 
 // Står i oppdatering.js, der den er testet
 const { nyareEnn } = window.HM_OPPDATERING;
@@ -471,11 +475,25 @@ function visPaabudt(apk) {
   $('paabudtVersjon').textContent = VERSJON;
   $('paabudtLast').onclick = () => opneNedlasting(apk);
   $('paabudt').hidden = false;
+  settBakPaabudt(true);
+}
+
+function skjulPaabudt() {
+  $('paabudt').hidden = true;
+  settBakPaabudt(false);
+}
+
+/* Skjermen dekker alt for øyet, men skjermleser og tastatur når fortsatt det
+   som ligger under. inert tar dem med også. */
+function settBakPaabudt(stengt) {
+  for (const el of document.body.children) {
+    if (el.id !== 'paabudt' && el.tagName !== 'SCRIPT') el.inert = stengt;
+  }
 }
 
 async function sjekkVersjon() {
   // Bare den installerte Android-appen har noe å oppdatere
-  if (!erNativ()) return;
+  if (!erAndroidApp()) return;
   const info = await hentVersjonsinfo();
   const svar = window.HM_OPPDATERING.vurder({ installert: VERSJON, info, huska: lesMinimum() });
   huskMinimum(svar.minimum);
@@ -485,7 +503,7 @@ async function sjekkVersjon() {
     return;
   }
   // Minimum kan være senket siden sist, og da skal skjermen bort igjen
-  $('paabudt').hidden = true;
+  if (!$('paabudt').hidden) skjulPaabudt();
   if (svar.tilstand === 'kan') visOppdatering(info);
 }
 
@@ -669,6 +687,9 @@ async function avgjerPort() {
   }
 
   visPortDel('portLastar');
+  /* En nøkkel som tilhører en annen bruker skal bort før denne får se lista.
+     Den forrige økten kan ha gått ut uten at noen trykket «Logg ut». */
+  await window.HM_NOKKEL.ryddForAndre(window.HM_NAV.brukarId());
   const svar = await window.HM_NAV.minStatus();
   meg = svar.navn || null;
   mittEpost = svar.epost || null;
@@ -876,7 +897,7 @@ $('omLoggUt').addEventListener('click', loggUtOgTilbake);
      at denne versjonen er for gammel, dekker skjermen med én gang, før nettet
      har rukket å svare. Appen starter som vanlig under den, så den er klar i
      det øyeblikket minimum eventuelt blir senket. */
-  if (erNativ()) {
+  if (erAndroidApp()) {
     const fraSist = window.HM_OPPDATERING.vurder({ installert: VERSJON, info: null, huska: lesMinimum() });
     if (fraSist.tilstand === 'maa') visPaabudt();
   }
