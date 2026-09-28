@@ -60,8 +60,13 @@ function kobleTil(window, { nokkel = true, opphav = APPEN, heiPaaPorten = true }
 }
 
 const knapp = (window) => window.document.getElementById('hm-nokkel');
-const synleg = (window) => !!knapp(window) && knapp(window).className === 'synleg';
-const tikk = () => new Promise((r) => setTimeout(r, 0));
+/* Både klassen og stilen: stilen styrer synligheten selv der en streng CSP
+   ville stoppet den innlagte <style>. */
+const synleg = (window) => !!knapp(window) && knapp(window).className === 'synleg'
+  && knapp(window).style.display !== 'none';
+/* Snutten samler endringer i sida til neste bilde (requestAnimationFrame,
+   eller 16 ms der den ikke finnes, som i jsdom). */
+const tikk = () => new Promise((r) => setTimeout(r, 40));
 
 test('ingen knapp uten melding fra appen', () => {
   const w = side();
@@ -209,6 +214,52 @@ test('uten svar innen tre sekunder sier knappen fra', () => {
   assert.ok(vakt, 'ingen tidsgrense på 3000 ms');
   vakt.fn();
   assert.equal(knapp(w).textContent, 'Åpne sida fra appen på nytt');
+});
+
+test('et svar som kommer etter tidsgrensen, blir ikke fylt inn', () => {
+  const w = side();
+  const planlagt = [];
+  w.setTimeout = (fn, ms) => { planlagt.push({ fn, ms }); return planlagt.length; };
+  const { svar } = kobleTil(w);
+  knapp(w).click();
+  planlagt.find((p) => p.ms === 3000).fn();
+  svar({ type: 'hm-nokkel', epost: 'ola@hauge.no', passord: 'hemmelig' });
+  assert.equal(w.document.getElementById('passord').value, '');
+});
+
+test('ingen knapp på en side for nytt passord', () => {
+  const w = side(`
+    <form>
+      <input id="epost" type="email">
+      <input id="gammelt" type="password" autocomplete="current-password">
+      <input id="nytt" type="password" autocomplete="new-password">
+    </form>`);
+  kobleTil(w);
+  assert.equal(synleg(w), false);
+});
+
+test('knappen kommer tilbake når innloggingen kommer tilbake', async () => {
+  const w = side('<div id="rot"></div>');
+  const { svar } = kobleTil(w);
+  const rot = w.document.getElementById('rot');
+  rot.innerHTML = SKJEMA;
+  await tikk();
+  knapp(w).click();
+  svar({ type: 'hm-nokkel', epost: 'ola@hauge.no', passord: 'hemmelig' });
+  assert.equal(synleg(w), false);
+  rot.innerHTML = '<p>Innlogget</p>';      // innloggingen gikk gjennom
+  await tikk();
+  rot.innerHTML = SKJEMA;                  // logget ut igjen, samme side
+  await tikk();
+  assert.equal(synleg(w), true);
+});
+
+test('en feil i sida tar ikke ned knappen', () => {
+  const w = side();
+  const { svar } = kobleTil(w);
+  knapp(w).click();
+  // Et svar med tull skal gi beskjed, ikke kaste
+  assert.doesNotThrow(() => svar({ type: 'hm-nokkel', epost: 123, passord: { x: 1 } }));
 });
 
 test('etter vellykket utfylling går knappen bort', () => {
