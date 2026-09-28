@@ -4,7 +4,7 @@
 
 const SIDER_URL =
   'https://raw.githubusercontent.com/thomashauge03/hauge-maskin-app/main/sider.json';
-const VERSJON = '1.16.0';
+const VERSJON = '1.16.1';
 
 /* Den lagrede lista hører til én bruker, ikke til telefonen.
    Logger Ola ut og Kari inn på samme telefon, ville Kari sett Olas liste
@@ -627,6 +627,22 @@ async function visNokkelArk() {
   visPortFeil('nokkelFeil', '');
   $('om').hidden = true;
   $('nokkelArk').hidden = false;
+  visSisteForsok(!!epost);
+}
+
+/* Stegene fra sist et system ble åpnet, med versjonen og Chrome øverst, så
+   ett skjermbilde sier alt. Aldri e-post eller passord. */
+async function visSisteForsok(harNokkel) {
+  const svar = await window.HM_NOKKEL.sisteForsok();
+  $('nokkelForsok').hidden = !svar;
+  if (!svar) return;
+  const linjer = svar.linjer.length ? svar.linjer : ['Ingen system er åpnet fra appen siden den ble oppdatert.'];
+  $('nokkelLogg').textContent = [
+    `Appen ${VERSJON} · ${harNokkel ? 'nøkkel lagret' : 'ingen nøkkel lagret'}`,
+    `Chrome: ${svar.nettleser || 'ukjent'}`,
+    '',
+    ...linjer
+  ].join('\n');
 }
 
 // Passordet skal ikke bli liggende i et skjult felt

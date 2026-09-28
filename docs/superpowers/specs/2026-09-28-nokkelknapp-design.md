@@ -172,6 +172,15 @@ Alle er JSON-tekst.
 | App | `{"type":"hm-nokkel","epost":"…","passord":"…"}` | Svar når reglene sier ja. |
 | App | `{"type":"hm-nokkel","feil":"…"}` | Svar når de sier nei. |
 
+Fra 1.16.1 sier sida også fra hva den så, til «Siste forsøk» i nøkkelarket
+(appen skriver dem bare i loggen; 1.16.0 overser dem):
+
+| Fra | Melding | Når |
+|---|---|---|
+| Side | `{"type":"hm-klar","v":2,"opphav","sti","passordfelt","nyttPassord","nokkel"}` | Sida fikk hilsenen. `opphav` er det Chrome leverte meldingen med. |
+| Side | `{"type":"hm-vist","v":2}` | 🔑-knappen kom fram, én gang per hilsen. |
+| Side | `{"type":"hm-avvist","v":2,"opphav"}` | En melding med port kom fra et opphav sida ikke kjente igjen. Svaret går på den medsendte porten. |
+
 **Slik Chrome faktisk leverer kanalen** – målt på emulator med Chrome 113, ikke
 lest ut av dokumentasjonen, som beskriver det annerledes:
 

@@ -163,6 +163,13 @@
      Og ingen knapp der det står et felt for NYTT passord – registrering
      og passordbytte skal ikke få den felles nøkkelen fylt inn.
 
+     ── TIL «SISTE FORSØK» I APPEN ─────────────────────────────────
+     Sida sier fra til appen hva den så, så en feil på en telefon kan
+     finnes uten kabel: hm-klar (fikk hilsenen – med opphavet, stien og om
+     det finnes et passordfelt), hm-vist (knappen kom fram) og hm-avvist
+     (en melding med port ble avvist – med opphavet den hadde). Aldri
+     e-post eller passord.
+
      SIKKERHETSNETT: alt, også hendelsene, ligger i try/catch. Knappen og
      stilen dens lages først når det finnes et passordfelt – sider uten
      innlogging får ingenting lagt inn. Synligheten settes fra skriptet,
@@ -186,7 +193,7 @@
       '#hm-nokkel.synleg{display:inline-flex}#hm-nokkel:active{background:#b40015}';
 
     var port = null, harNokkel = false, ferdig = false, vakt = null, planlagt = false;
-    var knapp = null, venter = null, tilbake = null;
+    var knapp = null, venter = null, tilbake = null, sisteOpphav = '', vistMeldt = false;
 
     /* Hendelser går utenfor den ytre try-en. Hver av dem får sin egen. */
     function trygt(fn) {
@@ -194,6 +201,7 @@
     }
 
     function les(t) { try { return JSON.parse(t); } catch (x) { return null; } }
+    function svarApp(o) { try { if (port) port.postMessage(JSON.stringify(o)); } catch (x) { /* bare til feilsøking */ } }
     function fraAppen(o) { return o === location.origin || APPEN.test(String(o)); }
 
     function synleg(el) {
@@ -286,6 +294,7 @@
       lagKnapp();
       if (knapp.className !== 'synleg') knapp.className = 'synleg';
       if (knapp.style.display !== 'inline-flex') knapp.style.display = 'inline-flex';
+      if (!vistMeldt) { vistMeldt = true; svarApp({ type: 'hm-vist', v: 2 }); }
       var r = pf.getBoundingClientRect();
       var topp = Math.round(r.bottom + 6) + 'px';
       var venstre = Math.round(Math.max(8, r.right - knapp.offsetWidth)) + 'px';
@@ -334,6 +343,9 @@
     function hei(m) {
       harNokkel = m.nokkel === true;
       ferdig = false;
+      vistMeldt = false;
+      svarApp({ type: 'hm-klar', v: 2, opphav: sisteOpphav, sti: location.pathname,
+                passordfelt: !!passordfelt(), nyttPassord: !!nyttPassord(), nokkel: harNokkel });
       if (!harNokkel) { plasser(); return; }
       if (document.body) { folgMed(); plasser(); }
       else document.addEventListener('DOMContentLoaded', trygt(function () { folgMed(); plasser(); }));
@@ -361,8 +373,15 @@
     }
 
     window.addEventListener('message', trygt(function (e) {
-      if (!e.ports || !e.ports[0] || !fraAppen(e.origin)) return;
+      if (!e.ports || !e.ports[0]) return;
+      if (!fraAppen(e.origin)) {
+        // Si fra hvorfor, på porten som kom med meldingen – ellers ser ingen
+        // i appen at Chrome leverte med et opphav vi ikke kjente igjen
+        try { e.ports[0].postMessage(JSON.stringify({ type: 'hm-avvist', v: 2, opphav: String(e.origin).slice(0, 120) })); } catch (x) { /* bare til feilsøking */ }
+        return;
+      }
       port = e.ports[0];
+      sisteOpphav = String(e.origin).slice(0, 120);
       port.onmessage = trygt(motta);
       var m = les(e.data);
       if (m && m.type === 'hm-hei') hei(m);

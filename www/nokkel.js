@@ -59,5 +59,24 @@
     if (s && (!meg || s.eier !== meg)) await fjern();
   }
 
-  window.HM_NOKKEL = { finst: () => !!plugin(), status, lagre, fjern, ryddForAndre };
+  /* «Siste forsøk»: hva som skjedde sist et system ble åpnet fra appen –
+     { linjer, nettleser }, eller null når appen ikke kan si det. Stegene
+     skrives av TwaPlugin.java, aldri med e-post eller passord. */
+  async function sisteForsok() {
+    const c = window.Capacitor;
+    if (!c || !c.isNativePlatform || !c.isNativePlatform()) return null;
+    const twa = c.Plugins && c.Plugins.Twa;
+    if (!twa || !twa.sisteForsok) return null;
+    try {
+      const svar = await twa.sisteForsok();
+      return {
+        linjer: Array.isArray(svar && svar.linjer) ? svar.linjer.map(String) : [],
+        nettleser: (svar && typeof svar.nettleser === 'string') ? svar.nettleser : ''
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  window.HM_NOKKEL = { finst: () => !!plugin(), status, lagre, fjern, ryddForAndre, sisteForsok };
 })();

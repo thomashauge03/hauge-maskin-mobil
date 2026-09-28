@@ -231,6 +231,19 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .om-knapp:active { background: var(--botn-3); }
 .om-knapp[data-gaar="ja"] b { color: var(--dempa); }
 
+/* «Siste forsøk» i nøkkelarket. Lite og dempet – den er til feilsøking,
+   ikke til daglig bruk – men lesbar på et skjermbilde. */
+.forsok { margin: 6px 0 4px; border-top: 1px solid var(--strek); padding-top: 8px; }
+.forsok summary { cursor: pointer; font-size: 14px; color: var(--dempa); padding: 8px 0; }
+.forsok-hjelp { font-size: 13px; line-height: 1.5; color: var(--dempa); margin: 4px 0 10px; }
+.forsok-logg {
+  margin: 0; padding: 10px 12px; max-height: 45dvh; overflow: auto;
+  background: var(--botn-3); border: 1px solid var(--strek); border-radius: 10px;
+  font: 11px/1.5 ui-monospace, Menlo, Consolas, monospace; color: #c9c9d3;
+  white-space: pre-wrap; overflow-wrap: anywhere;
+  user-select: text; -webkit-user-select: text;
+}
+
 /* ---------- Bakgrunnen ----------
    Logoen langt bak lista, se Bakgrunn i lastar.js. Den ligger i det
    nederste laget; alt innhold løftes over den med z-index 1. Toppen og

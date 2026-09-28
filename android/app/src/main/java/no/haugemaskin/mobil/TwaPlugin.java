@@ -1,6 +1,7 @@
 package no.haugemaskin.mobil;
 
 import android.content.ComponentName;
+import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -17,6 +18,7 @@ import androidx.browser.customtabs.CustomTabsSession;
 import androidx.browser.trusted.TrustedWebActivityIntentBuilder;
 
 import com.getcapacitor.JSArray;
+import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
@@ -26,7 +28,9 @@ import com.google.androidbrowserhelper.trusted.TwaProviderPicker;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Åpner en side i fullskjerm uten adresselinje, og holder en meldingskanal
@@ -55,6 +59,11 @@ import java.util.List;
  *
  * QualityEnforcer er fortsatt ikke med. Den kaster når Chrome melder at en
  * side ga 404 – det ville vært en krasjvei der appen i dag viser en feilside.
+ *
+ * Hvert steg i kanalen havner også i «Siste forsøk» i nøkkelarket, så en feil
+ * på en telefon kan finnes uten kabel. Loggen tømmes ved hver åpning og tåler
+ * at Android avslutter appen mens Chrome ligger over. Aldri e-post eller
+ * passord – bare hva som skjedde.
  */
 @CapacitorPlugin(name = "Twa")
 public class TwaPlugin extends Plugin {
@@ -67,6 +76,14 @@ public class TwaPlugin extends Plugin {
      * passord – bare hva som skjedde, og med hvilket opphav.
      */
     private static final String LOGG = "HmKanal";
+
+    /** «Siste forsøk»: lagret i SharedPreferences, lest inn på nytt ved behov. */
+    private static final String DAGBOK_LAGER = "hm-kanal";
+    private static final String DAGBOK_NOKKEL = "logg";
+    private static final int DAGBOK_MAKS = 60;
+    private static Kanallogg dagbok;
+    /** Hvilken åpning som pågår. En eldre kanal skriver ikke i loggen til en nyere. */
+    private static int forsok;
 
     private interface VedKlient {
         void klar(CustomTabsClient klient);
@@ -95,6 +112,52 @@ public class TwaPlugin extends Plugin {
     @Override
     public void load() {
         hvelv = new Nokkelhvelv(getContext());
+    }
+
+    private static synchronized Kanallogg dagbok(Context ctx) {
+        if (dagbok == null) {
+            String lagret = ctx.getSharedPreferences(DAGBOK_LAGER, Context.MODE_PRIVATE).getString(DAGBOK_NOKKEL, null);
+            dagbok = Kanallogg.fraTekst(lagret, DAGBOK_MAKS);
+        }
+        return dagbok;
+    }
+
+    /** En ny åpning: tom logg, og eldre kanaler slutter å skrive i den. */
+    private int nyttForsok() {
+        forsok++;
+        try {
+            dagbok(getContext()).tom();
+        } catch (Exception ignored) {
+            // Feilsøkingen skal aldri stoppe åpningen
+        }
+        return forsok;
+    }
+
+    /** Til logcat, og til «Siste forsøk» når det gjelder åpningen som pågår. */
+    private void skriv(int nr, String linje) {
+        Log.d(LOGG, linje);
+        if (nr != forsok) return;
+        try {
+            Context ctx = getContext().getApplicationContext();
+            Kanallogg d = dagbok(ctx);
+            d.legg(String.format(Locale.ROOT, "%tT", new Date()) + "  " + linje);
+            ctx.getSharedPreferences(DAGBOK_LAGER, Context.MODE_PRIVATE).edit()
+                    .putString(DAGBOK_NOKKEL, d.tilTekst()).apply();
+        } catch (Exception ignored) {
+            // Feilsøkingen skal aldri stoppe kanalen
+        }
+    }
+
+    /**
+     * «Siste forsøk» i nøkkelarket: stegene fra sist en side ble åpnet, og
+     * hvilken Chrome telefonen har akkurat nå.
+     */
+    @PluginMethod
+    public void sisteForsok(PluginCall call) {
+        JSObject ut = new JSObject();
+        ut.put("linjer", new JSArray(dagbok(getContext()).linjer()));
+        ut.put("nettleser", Nettleser.beskriv(getContext()));
+        call.resolve(ut);
     }
 
     /**
@@ -146,25 +209,33 @@ public class TwaPlugin extends Plugin {
         List<String> ekstra = leseOpphav(call);
 
         hovud.post(() -> {
+            int nr = nyttForsok();
+            skriv(nr, "Åpner " + opphav + " – nøkkelknappen er " + (tillatt ? "på" : "slått av") + " for sida");
             Valg valg;
             try {
                 valg = velgNettleser();
             } catch (Exception e) {
+                skriv(nr, "Fant ingen nettleser (" + e + ") – åpner i vanlig fane uten nøkkel");
                 call.reject("Fant ingen nettleser", e);
                 return;
             }
             if (valg == null) {
+                skriv(nr, "Ingen nettleser kan vise fullskjerm – åpner i vanlig fane uten nøkkel");
                 call.reject("Ingen nettleser med fullskjerm");
                 return;
             }
+            skriv(nr, "Nettleser: " + valg.pakke + " " + Nettleser.versjon(getContext(), valg.pakke)
+                    + (valg.stolt ? " – Chrome med Googles signatur" : " – ikke godkjent Chrome, nøkkelen blir ikke gitt"));
+            if (!valg.stolt) skriv(nr, "Chrome på telefonen: " + Nettleser.beskriv(getContext()));
             koble(valg.pakke, new VedKlient() {
                 @Override
                 public void klar(CustomTabsClient k) {
-                    start(call, k, url, opphav, tillatt, valg.stolt, ekstra);
+                    start(call, k, url, opphav, tillatt, valg.stolt, ekstra, nr);
                 }
 
                 @Override
                 public void feil(String grunn) {
+                    skriv(nr, grunn + " – åpner i vanlig fane uten nøkkel");
                     call.reject(grunn);
                 }
             });
@@ -172,19 +243,20 @@ public class TwaPlugin extends Plugin {
     }
 
     private void start(PluginCall call, CustomTabsClient k, String url, String opphav,
-                       boolean tillatt, boolean stolt, List<String> ekstra) {
+                       boolean tillatt, boolean stolt, List<String> ekstra, int nr) {
         try {
-            Kanal kanal = new Kanal(opphav, tillatt, stolt);
+            Kanal kanal = new Kanal(opphav, tillatt, stolt, nr);
             CustomTabsSession okt = k.newSession(kanal);
             if (okt == null) {
+                skriv(nr, "Fikk ikke økt med nettleseren – åpner i vanlig fane uten nøkkel");
                 call.reject("Fikk ikke økt med nettleseren");
                 return;
             }
             kanal.okt = okt;
             // Krever at warmup er kalt – det gjør koble() når bindingen kommer opp.
             boolean sjekkes = okt.validateRelationship(CustomTabsService.RELATION_USE_AS_ORIGIN, Uri.parse(opphav), null);
-            Log.d(LOGG, "Åpner " + opphav + " i " + leverandor + " (stolt=" + stolt + "), nokkel="
-                    + tillatt + ", assetlinks sjekkes: " + sjekkes);
+            skriv(nr, sjekkes ? "Ba Chrome sjekke at sida hører til appen"
+                    : "Chrome ville ikke sjekke om sida hører til appen");
 
             TrustedWebActivityIntentBuilder byggjar = new TrustedWebActivityIntentBuilder(Uri.parse(url));
             // Alle våre opphav blir sendt med. Ellers mister brukeren fullskjerm
@@ -193,10 +265,12 @@ public class TwaPlugin extends Plugin {
             // ingenting.
             if (!ekstra.isEmpty()) byggjar.setAdditionalTrustedOrigins(ekstra);
             byggjar.build(okt).launchTrustedWebActivity(getActivity());
+            skriv(nr, "Sida er sendt til Chrome");
             call.resolve();
         } catch (Exception e) {
             // Ingen nettleser med fullskjerm, eller Chrome slått av. Den som
             // kalte oss faller tilbake til Custom Tabs.
+            skriv(nr, "Klarte ikke å åpne i fullskjerm (" + e + ") – åpner i vanlig fane uten nøkkel");
             call.reject("Klarte ikke å åpne i fullskjerm", e);
         }
     }
@@ -323,35 +397,42 @@ public class TwaPlugin extends Plugin {
         private final String opphav;
         private final boolean tillatt;
         private final boolean stolt;
+        private final int nr;
         /** Chrome har bekreftet use_as_origin for opphavet. */
         private boolean bekreftet;
         /** Sida har en port akkurat nå. */
         private boolean kanalKlar;
         CustomTabsSession okt;
 
-        Kanal(String opphav, boolean tillatt, boolean stolt) {
+        Kanal(String opphav, boolean tillatt, boolean stolt, int nr) {
             this.opphav = opphav;
             this.tillatt = tillatt;
             this.stolt = stolt;
+            this.nr = nr;
         }
 
         private String grunnTilNei(boolean harNokkel) {
             return NokkelRegel.grunnTilNei(opphav, tillatt, harNokkel, stolt, bekreftet);
         }
 
+        private void skriv(String linje) {
+            TwaPlugin.this.skriv(nr, linje);
+        }
+
         /* Ny sidelasting: den gamle porten døde med det gamle dokumentet.
            Målopphavet gjør at Chrome bare leverer til sida vi åpnet. */
         @Override
         public void onNavigationEvent(int hending, @Nullable Bundle ekstra) {
+            skriv(Kanallogg.hending(hending));
             if (hending != NAVIGATION_FINISHED || okt == null) return;
             kanalKlar = false;
             Uri o = Uri.parse(opphav);
             try {
                 boolean bedt = okt.requestPostMessageChannel(o, o, new Bundle());
-                Log.d(LOGG, "Side lastet, ba om kanal til " + opphav + ": " + bedt);
+                skriv(bedt ? "Ba om kanal til sida" : "Chrome ville ikke åpne kanal til sida");
             } catch (Exception e) {
                 // Eldre Chrome: ingen kanal, ingen knapp
-                Log.d(LOGG, "Fikk ikke bedt om kanal: " + e);
+                skriv("Fikk ikke bedt om kanal (" + e + ")");
             }
         }
 
@@ -360,7 +441,8 @@ public class TwaPlugin extends Plugin {
         @Override
         public void onRelationshipValidationResult(int relasjon, @NonNull Uri hvem, boolean godkjent,
                                                    @Nullable Bundle ekstra) {
-            Log.d(LOGG, "assetlinks for " + hvem + " (relasjon " + relasjon + "): " + godkjent);
+            String hva = relasjon == CustomTabsService.RELATION_USE_AS_ORIGIN ? "use_as_origin" : "relasjon " + relasjon;
+            skriv("Chrome sjekket " + hvem + " (" + hva + "): " + (godkjent ? "hører til appen" : "hører IKKE til appen"));
             if (relasjon != CustomTabsService.RELATION_USE_AS_ORIGIN) return;
             if (!opphav.equals(NokkelRegel.opphav(hvem.toString()))) return;
             boolean var = bekreftet;
@@ -370,23 +452,25 @@ public class TwaPlugin extends Plugin {
 
         @Override
         public void onMessageChannelReady(@Nullable Bundle ekstra) {
+            skriv("Kanalen til sida er åpen");
             if (okt == null) return;
             kanalKlar = true;
             hils();
         }
 
         private void hils() {
-            boolean kan = grunnTilNei(hvelv.les() != null) == null;
+            String nei = grunnTilNei(hvelv.les() != null);
             try {
                 int svar = okt.postMessage(new JSONObject()
                         .put("type", "hm-hei")
                         .put("v", 1)
-                        .put("nokkel", kan)
+                        .put("nokkel", nei == null)
                         .toString(), null);
-                Log.d(LOGG, "Hilste " + opphav + " med nokkel=" + kan + " (svar " + svar + ")");
+                skriv("Hilste sida: " + (nei == null ? "nøkkelen er klar" : "ingen nøkkel – " + nei)
+                        + " (" + Kanallogg.svar(svar) + ")");
             } catch (Exception e) {
                 // Uten hilsen blir det bare ingen knapp
-                Log.d(LOGG, "Fikk ikke hilst: " + e);
+                skriv("Fikk ikke hilst på sida (" + e + ")");
             }
         }
 
@@ -397,10 +481,33 @@ public class TwaPlugin extends Plugin {
             try {
                 inn = new JSONObject(melding);
             } catch (Exception e) {
+                skriv("Uleselig melding fra sida");
                 return;
             }
-            if (!"hm-hent".equals(inn.optString("type"))) return;
+            String type = inn.optString("type");
+            switch (type) {
+                case "hm-hent":
+                    gi();
+                    return;
+                case "hm-klar":
+                    skriv("Sida fikk hilsenen: opphav " + kort(inn.optString("opphav"))
+                            + ", sti " + kort(inn.optString("sti"))
+                            + ", passordfelt " + (inn.optBoolean("passordfelt") ? "ja" : "nei")
+                            + (inn.optBoolean("nyttPassord") ? ", felt for nytt passord" : "")
+                            + ", nøkkel " + (inn.optBoolean("nokkel") ? "ja" : "nei"));
+                    return;
+                case "hm-vist":
+                    skriv("Sida viser 🔑-knappen");
+                    return;
+                case "hm-avvist":
+                    skriv("Sida avviste en melding med opphav " + kort(inn.optString("opphav")));
+                    return;
+                default:
+                    skriv("Ukjent melding fra sida: " + kort(type));
+            }
+        }
 
+        private void gi() {
             Nokkelhvelv.Nokkel n = hvelv.les();
             String nei = grunnTilNei(n != null);
             try {
@@ -408,11 +515,18 @@ public class TwaPlugin extends Plugin {
                 if (nei != null) ut.put("feil", nei);
                 else ut.put("epost", n.epost).put("passord", n.passord);
                 int svar = okt.postMessage(ut.toString(), null);
-                Log.d(LOGG, opphav + " ba om nøkkelen: " + (nei == null ? "gitt" : nei) + " (svar " + svar + ")");
+                skriv("Sida ba om nøkkelen: " + (nei == null ? "gitt" : nei) + " (" + Kanallogg.svar(svar) + ")");
             } catch (Exception e) {
                 // Sida sier selv fra etter tre sekunder uten svar
-                Log.d(LOGG, "Fikk ikke svart: " + e);
+                skriv("Fikk ikke svart sida (" + e + ")");
             }
         }
+    }
+
+    /** Tekst fra sida inn i loggen: kort, og uten linjeskift. */
+    private static String kort(String s) {
+        if (s == null || s.isEmpty()) return "(tomt)";
+        String en = s.replaceAll("[\\r\\n\\t]", " ");
+        return en.length() > 100 ? en.substring(0, 100) + "…" : en;
     }
 }

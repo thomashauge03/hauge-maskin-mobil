@@ -69,6 +69,12 @@ Du skal se `"linked": true`.
 Bryteren «Nøkkelknapp» i adminbordet slår knappen av for én side. Den står
 som `"nokkel": false` i `sider.json`; mangler feltet, er knappen på.
 
+**Kommer ikke knappen?** I appen (fra 1.16.1): Om → Nøkkel for innlogging →
+«Siste forsøk». Der står hvert steg fra sist et system ble åpnet: hvilken
+Chrome, om Chrome godtok `use_as_origin`, om kanalen åpnet seg, og hva sida
+svarte. Står det «Hilste sida» uten «Sida fikk hilsenen» etter, har ikke sida
+den nyeste snutten – eller den har en gammel i hurtigbufferen.
+
 ## Hvilke sider det gjelder
 
 Ni ligger på Vercel, der du eier repoet og bare skal kopiere filen:

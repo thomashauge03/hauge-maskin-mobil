@@ -228,6 +228,16 @@
         <p id="nokkelFeil" class="port-feil" hidden></p>
         <button type="submit" class="knapp knapp-stor">Lagre</button>
       </form>
+      <!-- Stegene fra sist et system ble åpnet, uten e-post og passord.
+           Skrives av TwaPlugin.java – se nokkel.js. -->
+      <details id="nokkelForsok" class="forsok" hidden>
+        <summary>Siste forsøk</summary>
+        <p class="forsok-hjelp">
+          Hva som skjedde sist du åpnet et system fra appen. Kom ikke
+          🔑-knappen, viser et skjermbilde av dette hvorfor.
+        </p>
+        <pre id="nokkelLogg" class="forsok-logg"></pre>
+      </details>
       <button id="nokkelFjern" class="tekstknapp midtstilt" hidden>Fjern nøkkelen</button>
       <button id="nokkelLukk" class="tekstknapp midtstilt">Lukk</button>
     </div>

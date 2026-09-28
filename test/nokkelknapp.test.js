@@ -128,7 +128,35 @@ test('et trykk ber appen om nøkkelen', () => {
   const w = side();
   const { sendt } = kobleTil(w);
   knapp(w).click();
-  assert.deepEqual(sendt, [{ type: 'hm-hent' }]);
+  assert.deepEqual(sendt.filter((m) => m.type === 'hm-hent'), [{ type: 'hm-hent' }]);
+});
+
+/* Til «Siste forsøk» i appen: sida sier fra hva den så. */
+test('sida sier fra at den fikk hilsenen, og hva den ser', () => {
+  const w = side();
+  const { sendt } = kobleTil(w);
+  const klar = sendt.find((m) => m.type === 'hm-klar');
+  assert.ok(klar, 'ingen hm-klar');
+  assert.equal(klar.opphav, APPEN);
+  assert.equal(klar.passordfelt, true);
+  assert.equal(klar.nyttPassord, false);
+  assert.equal(klar.nokkel, true);
+  assert.equal(klar.sti, '/logg-inn');
+});
+
+test('sida sier fra når den avviser en melding, og hvorfor', () => {
+  const w = side();
+  const { sendt } = kobleTil(w, { opphav: 'https://ond.example' });
+  const avvist = sendt.find((m) => m.type === 'hm-avvist');
+  assert.ok(avvist, 'ingen hm-avvist');
+  assert.equal(avvist.opphav, 'https://ond.example');
+  assert.equal(knapp(w), null);
+});
+
+test('sida sier fra når knappen blir vist', () => {
+  const w = side();
+  const { sendt } = kobleTil(w);
+  assert.equal(sendt.filter((m) => m.type === 'hm-vist').length, 1);
 });
 
 test('svaret fyller e-post og passord', () => {
