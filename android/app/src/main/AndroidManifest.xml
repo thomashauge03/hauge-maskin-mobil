@@ -29,6 +29,12 @@
             android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- Meldingskanalen mellom appen og sida i fullskjerm. Chrome binder
+             seg hit for å levere meldinger fra sida. Se TwaPlugin. -->
+        <service
+            android:name="androidx.browser.customtabs.PostMessageService"
+            android:exported="true" />
     </application>
 
     <!-- Permissions -->
