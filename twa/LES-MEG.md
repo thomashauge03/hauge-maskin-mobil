@@ -39,6 +39,36 @@ Men det betyr også at en deploy som mister filen gjør at fullskjerm **forsvinn
 stille**, kanskje i ukevis før noen nevner det. Derfor står oppetidssjekken
 nederst på denne siden, og den er ikke valgfri.
 
+## Nøkkelknappen
+
+Samme fil gir også nøkkelknappen: mobilappen kan fylle inn én felles
+innlogging i systemene våre. Det krever to ting per system, og begge er
+standard fra nå av:
+
+1. **`assetlinks.json` med `use_as_origin`.** Relasjonen lar appen åpne en
+   meldingskanal til sida. Fila i denne mappen har den allerede – kopier den
+   som før.
+2. **HM-snutten.** [`hm-snutt.html`](hm-snutt.html) har to deler: lukkeren og
+   nøkkelknappen. Begge limes inn øverst i `<body>`, **inline i HTML-en
+   serveren sender**. I en Vite-app er det `index.html`. I Next.js er det
+   `app/layout.tsx`, som et `<script dangerouslySetInnerHTML>` – ikke i en
+   komponent som starter etter hydrering, for da går den første meldingen fra
+   appen tapt.
+
+Mangler relasjonen, åpner sida seg i fullskjerm som før, bare uten knapp.
+Mangler snutten, skjer det samme. Ingenting går i stykker.
+
+Sjekk at Google godtar relasjonen:
+
+```bash
+curl -s "https://digitalassetlinks.googleapis.com/v1/assetlinks:check?source.web.site=https://DITT-DOMENE&relation=delegate_permission/common.use_as_origin&target.android_app.package_name=no.haugemaskin.mobil&target.android_app.certificate.sha256_fingerprint=94:D0:34:2F:9F:E4:31:9C:D6:A5:C0:4F:96:CE:9D:85:84:54:6F:DE:12:63:36:DC:20:83:9B:28:04:AC:27:70"
+```
+
+Du skal se `"linked": true`.
+
+Bryteren «Nøkkelknapp» i adminbordet slår knappen av for én side. Den står
+som `"nokkel": false` i `sider.json`; mangler feltet, er knappen på.
+
 ## Hvilke sider det gjelder
 
 Ni ligger på Vercel, der du eier repoet og bare skal kopiere filen:

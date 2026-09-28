@@ -64,8 +64,10 @@ Appen åpner systemene i nettleserens egen visning – Custom Tabs på Android,
 Safari på iPhone – i stedet for i en WebView appen styrer selv. Det er et
 bevisst valg:
 
-- **Appen ser aldri passordene.** Det betyr mest for SmartDok og Tripletex, som
-  ikke er våre systemer og der folk skriver inn passord vi ikke har noe med.
+- **Appen ser aldri passordene** folk skriver inn i systemene. Det betyr mest for
+  SmartDok og Tripletex, som ikke er våre systemer og der folk skriver inn
+  passord vi ikke har noe med. Unntaket er nøkkelen du selv legger inn i appen –
+  se [Nøkkel for innlogging](#nøkkel-for-innlogging).
 - **På Android blir økten delt med Chrome**, så folk slipper å logge inn på nytt.
   Dette gjelder ikke iPhone: SFSafariViewController har ikke hatt delt økt med
   Safari siden iOS 11.
@@ -80,6 +82,32 @@ En **ramme** inni appen er en annen sak, og er utelukket for to av systemene:
 Tilbudssystem (`frame-ancestors 'none'` og `X-Frame-Options: DENY`) og Utleie
 (`DENY`). De andre setter ingen slik header, men ramme er uaktuelt uansett av
 grunnene over.
+
+## Nøkkel for innlogging
+
+Bruker du samme e-post og passord i systemene våre, legger du det inn **én
+gang** under **Om → Nøkkel for innlogging**. Åpner du et system fra appen og
+havner på innloggingen, får du en rød **🔑 Fyll inn** under passordfeltet.
+Samme idé som «Felles innlogging» i Windows-appen.
+
+- Nøkkelen er kryptert med telefonens eget nøkkelhvelv (Android Keystore) og
+  ligger **bare** på telefonen. Den blir aldri sendt til oss, og slettes når du
+  logger ut.
+- Appen gir den bare til **våre egne systemer**, og bare til sida du åpnet fra
+  lista. Chrome sørger for at meldingen ikke kan gå noe annet sted – kanalen
+  krever at systemets `assetlinks.json` har godkjent appen.
+- Utfyllingen skjer **bare når du trykker** knappen, og **appen trykker aldri
+  «Logg inn»** selv. Du ser hva som ble fylt inn, og bekrefter selv.
+- Bare et ekte innloggingsskjema blir fylt inn. Søkefelt blir hoppet over.
+- Er passordet annerledes i ett av systemene, fyller knappen inn feil passord
+  der. Innloggingen feiler da på vanlig måte, og du skriver det selv.
+- Admin kan slå knappen av for én side med bryteren **Nøkkelknapp** i
+  adminbordet.
+- Finnes ikke på iPhone: Safari har ingen kanal mellom en hjemskjerm-app og
+  sida den åpner. SmartDok og Tripletex er heller ikke med – vi kan ikke legge
+  noe inn hos dem.
+
+Oppsettet per system står i [twa/LES-MEG.md](twa/LES-MEG.md#nøkkelknappen).
 
 ## Bygge selv
 
