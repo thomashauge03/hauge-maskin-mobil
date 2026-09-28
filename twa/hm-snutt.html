@@ -1,0 +1,315 @@
+<!-- ══════════════════════════════════════════════════════════════════
+     LUKKEREN — limes inn øverst i <body> på hvert av systemene våre.
+
+     Mobilappen lukker tre skrå plater når du trykker på en side. Chrome
+     tar over skjermen, og da er det systemet selv som må åpne dem igjen.
+     Gjør det begge steder, blir overgangen sammenhengende, og den hvite
+     stunden mens sida laster forsvinner bak platene.
+
+     ── SPILLER BARE NÅR APPEN ÅPNET SIDA ──────────────────────────
+     Åpner du systemet i en vanlig nettleser – på PC, som er
+     primærplattformen – skal det ikke skje noen ting.
+
+     Signalet er document.referrer. Når appen åpner en side, setter
+     Chrome referreren til «android-app://no.haugemaskin.mobil/», og en
+     nettleser kan ALDRI produsere det skjemaet: referreren er adressen
+     til dokumentet som startet navigasjonen, og et nettdokument kan
+     ikke ha en android-app-adresse.
+
+     Prefiks-sammenlikning, ikke ===, fordi adressen kanoniseres med
+     skråstrek til slutt.
+
+     Tre andre signaler ble vurdert og forkastet:
+       · display-mode: standalone — fem av systemene våre er
+         installerbare som PWA med display:standalone, og da melder de
+         standalone uten at appen er involvert.
+       · en parameter i adressa — window.open-utgangen i appen ligger
+         utenfor den native sjekken, så parameteren ville havnet på
+         PC-adresser og platene ville spilt i nettleseren. Feil vei å
+         feile. Dessuten bærer innloggingsrunden i stock-smart
+         parameteren videre inn i ?redirect=.
+       · sessionStorage alene — Chrome på Android tømmer det ved
+         oppstart, så flagget overlever ikke.
+
+     Feilmodusen her går bare én vei: sida kan gå glipp av animasjonen
+     (for eksempel etter en innloggingsrunde, som bytter referreren),
+     men den kan aldri spille i en vanlig nettleser.
+
+     ── MÅ LIGGE INLINE ────────────────────────────────────────────
+     Ikke i bunten. Lastes den som en modul, rekker nettleseren å male
+     den hvite siden først, og da er hele poenget borte.
+
+     Vinkelen er −12°, den samme som bransjebåndet i logoen.
+
+     SIKKERHETSNETT, fordi dette ligger over ekte systemer i drift:
+       · platene er display:none som utgangspunkt. Svikter skriptet,
+         ser ingen noe – i stedet for at alle ser plater som blir
+         liggende.
+       · pointer-events: none — de kan aldri svelge et trykk
+       · åpner på load, men SENEST etter 2,6 sekund uansett
+       · fjerner seg selv etterpå
+       · respekterer prefers-reduced-motion
+
+     Kanonisk kopi: hauge-maskin-mobil/twa/hm-snutt.html
+     ══════════════════════════════════════════════════════════════════ -->
+<style>
+  /* Av som utgangspunkt. Skriptet under skrur den på, og bare da. */
+  #hm-lukkar { display: none; }
+  html[data-hm-app] #hm-lukkar {
+    display: block;
+    position: fixed; inset: 0; z-index: 2147483647; pointer-events: none; overflow: hidden;
+  }
+  #hm-lukkar .hm-l-grunn { position: absolute; inset: 0; background: #0a0a0c; }
+  #hm-lukkar i {
+    position: absolute; top: -14%; bottom: -14%; width: 46%;
+    background: linear-gradient(100deg, #0b0b0f 0%, #16161c 72%, #1c1c24 100%);
+    transform: skewX(-12deg);
+  }
+  #hm-lukkar i::after {
+    content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 4px; background: #e2001a;
+  }
+  #hm-lukkar i:nth-of-type(1) { left: -8%; }
+  #hm-lukkar i:nth-of-type(2) { left: 28%; }
+  #hm-lukkar i:nth-of-type(3) { left: 64%; }
+
+  /* Grunnen slipper i det sveipet starter. Platene dekker alt akkurat da,
+     så byttet er usynlig – og uten dette ville du sett mørkt bak dem. */
+  #hm-lukkar.opp .hm-l-grunn { opacity: 0; }
+  #hm-lukkar.opp i { animation: hmLukkOpp 520ms cubic-bezier(.62, .02, .34, 1) both; }
+  #hm-lukkar.opp i:nth-of-type(1) { animation-delay: 0ms; }
+  #hm-lukkar.opp i:nth-of-type(2) { animation-delay: 60ms; }
+  #hm-lukkar.opp i:nth-of-type(3) { animation-delay: 120ms; }
+  @keyframes hmLukkOpp { to { transform: skewX(-12deg) translate3d(210%, 0, 0); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    #hm-lukkar i { display: none; }
+    #hm-lukkar.opp { opacity: 0; transition: opacity .2s linear; }
+  }
+</style>
+<div id="hm-lukkar"><div class="hm-l-grunn"></div><i></i><i></i><i></i></div>
+<script>
+(function () {
+  var e = document.getElementById('hm-lukkar');
+  if (!e) return;
+  function vekk() { if (e.parentNode) e.parentNode.removeChild(e); }
+
+  /* Bare når Hauge Maskin-appen åpnet sida. Prefiks, ikke ===: adressen
+     kommer kanonisert med skråstrek til slutt. */
+  var r = document.referrer || '';
+  if (r.lastIndexOf('android-app://no.haugemaskin.mobil', 0) !== 0) { vekk(); return; }
+
+  /* Én gang per økt. Referreren overlever både reload og tilbakeknappen,
+     så uten dette ville platene spilt om igjen på en side du alt hadde
+     åpnet. Chrome på Android tømmer session storage ved oppstart, så
+     dette er en hjelp der det virker – ikke noe vi hviler på. */
+  try {
+    if (sessionStorage.getItem('hm-lukkar')) { vekk(); return; }
+    sessionStorage.setItem('hm-lukkar', '1');
+  } catch (x) { /* privat modus, blokkerte data – la den spille */ }
+
+  document.documentElement.setAttribute('data-hm-app', '');
+
+  var start = Date.now(), gjort = false;
+  function opne() {
+    if (gjort) return;
+    gjort = true;
+    /* Minst 260 ms. På en varm cache er sida klar før øyet rekker å se
+       platene, og da blir sveipet et blaff i stedet for en overgang. */
+    setTimeout(function () {
+      e.className = 'opp';
+      setTimeout(vekk, 760);
+    }, Math.max(0, 260 - (Date.now() - start)));
+  }
+  if (document.readyState === 'complete') opne();
+  else window.addEventListener('load', opne);
+  /* Henger en ressurs, skal ingen bli stående bak platene. */
+  setTimeout(opne, 2600);
+})();
+</script>
+<!-- ─── slutt på lukkeren ─────────────────────────────────────────── -->
+
+<!-- ══════════════════════════════════════════════════════════════════
+     NØKKELKNAPPEN — limes inn øverst i <body>, rett etter lukkeren.
+
+     Mobilappen har én felles innlogging lagret kryptert på telefonen.
+     Åpner appen denne sida, sender den en melding gjennom Chrome med en
+     port. Da, og bare da, kommer en 🔑 under passordfeltet. Trykk, så
+     fyller appen inn e-post og passord. Skjemaet sendes ALDRI inn herfra.
+
+     ── MÅ LIGGE INLINE, ØVERST ────────────────────────────────────
+     Bare den første meldingen fra appen bærer porten. Lytter vi ikke når
+     den kommer, er den tapt for denne sidelastingen. En React-komponent
+     starter for sent – derfor rett i HTML-en serveren sender.
+
+     ── HVEM VI HØRER PÅ ───────────────────────────────────────────
+     Bare en melding med vårt eget opphav, en port, og type "hm-hei".
+     Chrome setter opphavet på meldinger fra appen først når
+     /.well-known/assetlinks.json på dette domenet har godkjent appen
+     (use_as_origin). Et svar fylles bare inn når vi selv har spurt.
+
+     ── UTFYLLINGEN ────────────────────────────────────────────────
+     Samme regler som Windows-appen (hauge-maskin-app/src/main.js):
+       · uten et synlig passordfelt røres ingenting
+       · søke- og filterfelt hoppes over
+       · e-postfeltet er tekstfeltet rett før passordfeltet i skjemaet
+       · verdien settes slik at React merker den (input + change)
+
+     SIKKERHETSNETT: alt ligger i try/catch; knappen ligger utenfor
+     rammeverkets rot, så React kan ikke rive den; uten svar fra appen
+     innen tre sekunder sier knappen fra i stedet for å henge.
+
+     Kanonisk kopi: hauge-maskin-mobil/twa/hm-snutt.html
+     ══════════════════════════════════════════════════════════════════ -->
+<style>
+  #hm-nokkel {
+    position: fixed; z-index: 2147483646; top: 0; left: 0;
+    display: none; align-items: center;
+    padding: 8px 14px; border: 0; border-radius: 999px;
+    background: #e2001a; color: #fff;
+    font: 700 14px/1.2 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  #hm-nokkel.synleg { display: inline-flex; }
+  #hm-nokkel:active { background: #b40015; }
+</style>
+<script>
+(function () {
+  try {
+    var TEKST = '🔑 Fyll inn';
+    var port = null, harNokkel = false, ferdig = false;
+    var knapp = null, venter = null, tilbake = null;
+
+    function les(t) { try { return JSON.parse(t); } catch (x) { return null; } }
+
+    function synleg(el) {
+      var r = el.getBoundingClientRect();
+      return r.width > 0 && r.height > 0 && !el.disabled && !el.readOnly;
+    }
+
+    function passordfelt() {
+      var alle = document.querySelectorAll('input[type="password"]');
+      for (var i = 0; i < alle.length; i++) if (synleg(alle[i])) return alle[i];
+      return null;
+    }
+
+    var SOK = /(search|søk|sok|query|filter|finn)/i;
+    function erSokefelt(el) {
+      if (el.type === 'search') return true;
+      var t = [el.name, el.id, el.placeholder, el.getAttribute('aria-label'),
+               el.getAttribute('autocomplete')].filter(Boolean).join(' ');
+      return SOK.test(t);
+    }
+
+    function settVerdi(el, verdi) {
+      var setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+      setter.call(el, verdi);
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    function fyll(epost, passord) {
+      var pf = passordfelt();
+      if (!pf) return 0;
+      var omraade = pf.form || document;
+      var kandidatar = [].slice.call(omraade.querySelectorAll(
+        'input[type="email"], input[type="text"], input[type="tel"], input:not([type])'
+      )).filter(function (el) { return synleg(el) && !erSokefelt(el); });
+      var alle = [].slice.call(document.querySelectorAll('input'));
+      var pos = alle.indexOf(pf);
+      var foer = kandidatar.filter(function (el) { return alle.indexOf(el) < pos; });
+      var bf = foer.length ? foer[foer.length - 1] : null;
+      var n = 0;
+      if (typeof epost === 'string' && epost && bf) { settVerdi(bf, epost); n++; }
+      if (typeof passord === 'string' && passord) { settVerdi(pf, passord); pf.focus(); n++; }
+      return n;
+    }
+
+    /* En melding på knappen står en stund, så kommer teksten tilbake. */
+    function tekst(t, kort) {
+      if (!knapp) return;
+      knapp.textContent = t;
+      if (tilbake) { clearTimeout(tilbake); tilbake = null; }
+      if (kort) tilbake = setTimeout(function () { tilbake = null; if (knapp) knapp.textContent = TEKST; }, 4000);
+    }
+
+    /* Under passordfeltet, høyrejustert, så knappen ikke dekker midten av
+       «Logg inn»-knappen som som regel står rett under. */
+    function plasser() {
+      if (!knapp) return;
+      var pf = port && harNokkel && !ferdig ? passordfelt() : null;
+      if (!pf) { if (knapp.className) knapp.className = ''; return; }
+      if (knapp.className !== 'synleg') knapp.className = 'synleg';
+      var r = pf.getBoundingClientRect();
+      var topp = Math.round(r.bottom + 6) + 'px';
+      var venstre = Math.round(Math.max(8, r.right - knapp.offsetWidth)) + 'px';
+      if (knapp.style.top !== topp) knapp.style.top = topp;
+      if (knapp.style.left !== venstre) knapp.style.left = venstre;
+    }
+
+    function hent() {
+      if (!port || venter) return;
+      tekst('🔑 …');
+      port.postMessage(JSON.stringify({ type: 'hm-hent' }));
+      venter = setTimeout(function () {
+        venter = null;
+        tekst('Åpne sida fra appen på nytt', true);
+      }, 3000);
+    }
+
+    function svar(e) {
+      var m = les(e && e.data);
+      if (!m || m.type !== 'hm-nokkel') return;
+      if (!venter) return; /* bare svar på noe vi har spurt om */
+      clearTimeout(venter);
+      venter = null;
+      if (m.feil) { tekst(String(m.feil), true); return; }
+      if (fyll(m.epost, m.passord)) {
+        ferdig = true;
+        tekst(TEKST);
+        plasser();
+      } else {
+        tekst('Fant ikke innloggingen', true);
+      }
+    }
+
+    function lagKnapp() {
+      if (knapp) return;
+      knapp = document.createElement('button');
+      knapp.id = 'hm-nokkel';
+      knapp.type = 'button';
+      knapp.textContent = TEKST;
+      knapp.addEventListener('click', hent);
+      document.body.appendChild(knapp);
+      /* Våre egne endringer på knappen skal ikke sette i gang en ny runde. */
+      new MutationObserver(function (poster) {
+        for (var i = 0; i < poster.length; i++) {
+          var mal = poster[i].target;
+          if (mal !== knapp && !(knapp && knapp.contains(mal))) { plasser(); return; }
+        }
+      }).observe(document.documentElement, {
+        childList: true, subtree: true,
+        attributes: true, attributeFilter: ['class', 'style', 'hidden', 'type', 'disabled']
+      });
+      window.addEventListener('scroll', plasser, true);
+      window.addEventListener('resize', plasser);
+      if (window.visualViewport) window.visualViewport.addEventListener('resize', plasser);
+    }
+
+    window.addEventListener('message', function (e) {
+      if (e.origin !== location.origin) return;
+      if (!e.ports || !e.ports[0]) return;
+      var m = les(e.data);
+      if (!m || m.type !== 'hm-hei') return;
+      port = e.ports[0];
+      port.onmessage = svar;
+      harNokkel = m.nokkel === true;
+      ferdig = false;
+      if (!harNokkel) { plasser(); return; }
+      if (document.body) { lagKnapp(); plasser(); }
+      else document.addEventListener('DOMContentLoaded', function () { lagKnapp(); plasser(); });
+    });
+  } catch (x) { /* nøkkelknappen skal aldri kunne ta ned sida */ }
+})();
+</script>
+<!-- ─── slutt på nøkkelknappen ─────────────────────────────────────── -->
