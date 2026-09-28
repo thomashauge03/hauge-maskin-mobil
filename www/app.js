@@ -23,17 +23,9 @@ function ryddGamleNoklar() {
   } catch { /* ingenting å gjøre */ }
 }
 
-// Sidelista blir hentet over nett. Skulle noen få skrive i den, må de
-// ikke kunne sende folk til «javascript:», en fil på telefonen, eller en
-// ukryptert side som kan avlyttes. Derfor slipper bare https gjennom.
-function trygdAdresse(raa) {
-  try {
-    const u = new URL(String(raa));
-    return u.protocol === 'https:' ? u.href : null;
-  } catch {
-    return null;
-  }
-}
+// Står i sidelista.js, der de er testet – også regelen om at bare https
+// slipper gjennom
+const { trygdAdresse, lesSider } = window.HM_SIDER;
 
 const $ = (id) => document.getElementById(id);
 let sider = [];
@@ -107,22 +99,7 @@ async function hentSider({ stille = false } = {}) {
     const url = `${SIDER_URL}?t=${Date.now()}`;
     const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) throw new Error(`Fikk ${res.status} fra serveren`);
-    const json = await res.json();
-    const liste = (Array.isArray(json) ? json : json.pages) || [];
-
-    const alle = liste
-      // Sider merket 'pc' i den felles lista hører ikke hjemme på telefonen.
-      // Adresser som ikke er https blir forkastet med én gang.
-      .filter((p) => p && p.name && trygdAdresse(p.url) && p.hidden !== true && p.plattform !== 'pc')
-      .map((p) => ({
-        id: String(p.id || p.name),
-        name: String(p.name),
-        url: String(p.url),
-        group: p.group ? String(p.group) : 'Annet',
-        color: p.color ? String(p.color) : '#e2001a',
-        image: p.image ? String(p.image) : '',
-        help: p.help ? String(p.help) : ''
-      }));
+    const alle = lesSider(await res.json());
 
     /* Lista over er den samme for alle. Navet sier hvor jeg avviker.
 
