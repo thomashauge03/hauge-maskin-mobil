@@ -91,21 +91,27 @@ havner på innloggingen, får du en rød **🔑 Fyll inn** under passordfeltet.
 Samme idé som «Felles innlogging» i Windows-appen.
 
 - Nøkkelen er kryptert med telefonens eget nøkkelhvelv (Android Keystore) og
-  ligger **bare** på telefonen. Den blir aldri sendt til oss, og slettes når du
-  logger ut.
-- Appen gir den bare til **våre egne systemer**, og bare til sida du åpnet fra
-  lista. Chrome sørger for at meldingen ikke kan gå noe annet sted – kanalen
-  krever at systemets `assetlinks.json` har godkjent appen.
-- Utfyllingen skjer **bare når du trykker** knappen, og **appen trykker aldri
-  «Logg inn»** selv. Du ser hva som ble fylt inn, og bekrefter selv.
-- Bare et ekte innloggingsskjema blir fylt inn. Søkefelt blir hoppet over.
+  ligger **bare** på telefonen. Den blir aldri sendt til oss.
+- Den tilhører den som la den inn. Logger du ut – eller logger noen andre inn
+  på telefonen, også etter at økten din bare gikk ut – blir den slettet.
+- Appen gir den bare til sida du åpnet fra lista, og bare i **Google Chrome**,
+  sjekket på signatur. Chrome sørger for at meldingen ikke kan gå noe annet
+  sted: kanalen krever at systemets `assetlinks.json` har godkjent appen, og
+  appen venter til Chrome har bekreftet det. Uten Chrome åpner sidene seg som
+  før, bare uten knapp.
+- Knappen ber om nøkkelen når du trykker, og **appen trykker aldri «Logg
+  inn»** selv. En side kan i prinsippet be om nøkkelen uten at du trykker –
+  derfor gis den bare til **våre egne systemer**, og bryteren står av for
+  SmartDok og Tripletex.
+- Bare et ekte innloggingsskjema blir fylt inn. Søkefelt, og sider for nytt
+  passord, blir hoppet over.
 - Er passordet annerledes i ett av systemene, fyller knappen inn feil passord
   der. Innloggingen feiler da på vanlig måte, og du skriver det selv.
 - Admin kan slå knappen av for én side med bryteren **Nøkkelknapp** i
-  adminbordet.
+  adminbordet. **Fjern et system fra lista når det slettes** – et nettnavn
+  som blir ledig, kan noen andre ta, og da står det fortsatt i lista.
 - Finnes ikke på iPhone: Safari har ingen kanal mellom en hjemskjerm-app og
-  sida den åpner. SmartDok og Tripletex er heller ikke med – vi kan ikke legge
-  noe inn hos dem.
+  sida den åpner.
 
 Oppsettet per system står i [twa/LES-MEG.md](twa/LES-MEG.md#nøkkelknappen).
 

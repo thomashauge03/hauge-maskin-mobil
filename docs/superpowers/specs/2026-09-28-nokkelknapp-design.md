@@ -260,11 +260,21 @@ Appen gir nøkkelen bare når **alt** dette stemmer:
 1. Meldingen kom over kanalen appen åpnet, til opphavet til sida som ble åpnet
    fra lista.
 2. Opphavet er https.
-3. Bryteren for sida er ikke slått av.
-4. Det finnes en nøkkel som lar seg dekryptere.
-5. Meldingen er `hm-hent`.
+3. Nettleseren er **Google Chrome**, sjekket på pakkenavn **og** Googles
+   signatur. Nettleseren holder sesjonen og kunne bedt om nøkkelen selv; det
+   er Chromes oppførsel sikkerheten hviler på. Appen bruker Chrome når den
+   finnes, og uten Chrome åpner sidene seg som før, bare uten nøkkel.
+4. Chrome har **bekreftet** `use_as_origin` for akkurat dette opphavet. Kommer
+   bekreftelsen etter hilsenen, hilser appen på nytt.
+5. Bryteren for sida er ikke slått av.
+6. Det finnes en nøkkel som lar seg dekryptere.
+7. Meldingen er `hm-hent`.
 
 Ellers svarer appen `feil`.
+
+**Nøkkelen har en eier** – navets bruker-id, kryptert sammen med resten. Før
+lista vises, slettes en nøkkel som tilhører en annen enn den som er logget
+inn. Det dekker også en økt som gikk ut av seg selv, uten at noen logget ut.
 
 Chrome sikrer det meste av punkt 1: kanalen leveres bare til målopphavet, og
 bare etter at `assetlinks.json` på det domenet har godkjent appen. En annen side

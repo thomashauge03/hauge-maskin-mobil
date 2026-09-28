@@ -9,6 +9,18 @@
 > legger inn stilen selv, og lager knappen først når det finnes et passordfelt.
 > **`twa/hm-snutt.html` og `test/nokkelknapp.test.js` er fasit – ikke koden i
 > Task 1 under.** `TwaPlugin` logger hvert steg under taggen `HmKanal`.
+>
+> **Etter kodegjennomgangen:** nøkkelen gis bare i Google Chrome (sjekket på
+> signatur, `Nettleser.java`) og bare når Chrome har bekreftet `use_as_origin`;
+> den har en eier (navets bruker-id) og slettes når en annen logger inn; en
+> binding som aldri kom opp, rives; snutten hopper over sider for nytt passord.
+> `NokkelRegel.grunnTilNei` har derfor fem parametre, ikke tre.
+> SmartDok og Tripletex har `nokkel: false` i `sider.json`.
+>
+> **Ikke rullet ut:** `utleie-app` og `hm-web-craft` var i bruk av andre økter
+> (egen gren og uncommitede endringer). De får nøkkeldelen etter oppskriften i
+> `twa/LES-MEG.md` når de er ledige. Varslingskontroll kom inn i lista samme
+> dag og har verken lukkeren eller nøkkeldelen.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
