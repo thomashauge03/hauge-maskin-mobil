@@ -886,6 +886,7 @@ async function loggUtOgTilbake() {
   /* Nøkkelen først. Neste person på telefonen skal ikke arve den, og den
      skal bort selv om navet ikke svarer på utloggingen. */
   await window.HM_NOKKEL.fjern();
+  await window.HM_NOKKEL.glemForsok();
   await window.HM_NAV.loggUt();
   tomLokalt();
   meg = null;

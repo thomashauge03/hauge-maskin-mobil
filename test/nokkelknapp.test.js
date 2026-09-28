@@ -25,9 +25,9 @@ const SKJEMA = `
 
 /* jsdom har ingen layout. Felt med data-skjult er usynlige, resten får en
    størrelse – ellers ville snutten trodd at ingenting var synlig. */
-function side(innhald = SKJEMA) {
+function side(innhald = SKJEMA, url = 'https://rorlager.vercel.app/logg-inn') {
   const dom = new JSDOM(`<!DOCTYPE html><html><head></head><body>${SNUTT}${innhald}</body></html>`, {
-    url: 'https://rorlager.vercel.app/logg-inn',
+    url,
     runScripts: 'dangerously'
   });
   const { window } = dom;
@@ -43,10 +43,12 @@ function side(innhald = SKJEMA) {
    først en vindusmelding med TOM data og porten, med opphavet
    android-app://<vert>/no.haugemaskin.mobil – så kommer hilsenen fra
    appen på porten. heiPaaPorten: false er formen dokumentasjonen beskriver,
-   der hilsenen står i selve vindusmeldingen; den skal også virke. */
+   der hilsenen står i selve vindusmeldingen; den skal også virke.
+   Chrome sender uten avsendervindu (source === null), også målt; en ramme
+   i sida har alltid et. */
 const APPEN = 'android-app://rorlager.vercel.app/no.haugemaskin.mobil';
 
-function kobleTil(window, { nokkel = true, opphav = APPEN, heiPaaPorten = true } = {}) {
+function kobleTil(window, { nokkel = true, opphav = APPEN, heiPaaPorten = true, kilde = null } = {}) {
   const sendt = [];
   const port = { onmessage: null, postMessage: (m) => sendt.push(JSON.parse(m)) };
   const hei = JSON.stringify({ type: 'hm-hei', v: 1, nokkel });
@@ -54,6 +56,7 @@ function kobleTil(window, { nokkel = true, opphav = APPEN, heiPaaPorten = true }
   Object.defineProperty(e, 'data', { value: heiPaaPorten ? '' : hei });
   Object.defineProperty(e, 'origin', { value: opphav });
   Object.defineProperty(e, 'ports', { value: [port] });
+  Object.defineProperty(e, 'source', { value: kilde });
   window.dispatchEvent(e);
   if (heiPaaPorten && port.onmessage) port.onmessage({ data: hei });
   return { sendt, svar: (m) => port.onmessage && port.onmessage({ data: JSON.stringify(m) }) };
@@ -157,6 +160,56 @@ test('sida sier fra når knappen blir vist', () => {
   const w = side();
   const { sendt } = kobleTil(w);
   assert.equal(sendt.filter((m) => m.type === 'hm-vist').length, 1);
+});
+
+test('stien blir grov: ingen e-post, tall eller lange koder', () => {
+  const w = side(SKJEMA, 'https://rorlager.vercel.app/brukere/ola@hauge.no/reset/abcdefghijklmnopqrst/42');
+  const { sendt } = kobleTil(w);
+  assert.equal(sendt.find((m) => m.type === 'hm-klar').sti, '/brukere/…/reset/…');
+});
+
+test('vanlige stier kommer fram som de er', () => {
+  for (const [url, sti] of [['https://a.no/', '/'], ['https://a.no/logg-inn', '/logg-inn'], ['https://a.no/admin/', '/admin/']]) {
+    const w = side(SKJEMA, url);
+    const { sendt } = kobleTil(w);
+    assert.equal(sendt.find((m) => m.type === 'hm-klar').sti, sti);
+  }
+});
+
+test('sida sier hvor lenge etter lasting hilsenen kom', () => {
+  const w = side();
+  const { sendt } = kobleTil(w);
+  const klar = sendt.find((m) => m.type === 'hm-klar');
+  assert.equal(klar.v, 2);
+  assert.equal(typeof klar.t, 'number');
+  assert.equal(typeof klar.lastet, 'number');
+});
+
+test('ingenting sida sender til appen inneholder innloggingen', () => {
+  const w = side();
+  const { sendt, svar } = kobleTil(w);
+  knapp(w).click();
+  svar({ type: 'hm-nokkel', epost: 'ola@hauge.no', passord: 'hemmelig' });
+  assert.equal(w.document.getElementById('passord').value, 'hemmelig');
+  svar({ type: 'hm-hei', v: 1, nokkel: true }); // en ny hilsen med feltene fylt ut
+  const alt = JSON.stringify(sendt);
+  assert.ok(sendt.filter((m) => m.type === 'hm-klar').length === 2, alt);
+  assert.ok(!alt.includes('ola@hauge.no') && !alt.includes('hemmelig'), alt);
+});
+
+test('en ramme i sida får ikke svar, selv med port', () => {
+  const w = side();
+  const { sendt } = kobleTil(w, { opphav: 'https://ramme.example', kilde: {} });
+  assert.deepEqual(sendt, []);
+  assert.equal(knapp(w), null);
+});
+
+test('en feil i feilsøkingen stopper ikke knappen', () => {
+  const w = side();
+  w.performance.now = () => { throw new Error('tull'); };
+  const { sendt } = kobleTil(w);
+  assert.equal(synleg(w), true);
+  assert.equal(sendt.filter((m) => m.type === 'hm-klar').length, 0);
 });
 
 test('svaret fyller e-post og passord', () => {

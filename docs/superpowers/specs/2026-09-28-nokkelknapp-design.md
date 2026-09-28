@@ -177,9 +177,13 @@ Fra 1.16.1 sier sida også fra hva den så, til «Siste forsøk» i nøkkelarket
 
 | Fra | Melding | Når |
 |---|---|---|
-| Side | `{"type":"hm-klar","v":2,"opphav","sti","passordfelt","nyttPassord","nokkel"}` | Sida fikk hilsenen. `opphav` er det Chrome leverte meldingen med. |
-| Side | `{"type":"hm-vist","v":2}` | 🔑-knappen kom fram, én gang per hilsen. |
-| Side | `{"type":"hm-avvist","v":2,"opphav"}` | En melding med port kom fra et opphav sida ikke kjente igjen. Svaret går på den medsendte porten. |
+| Side | `{"type":"hm-klar","v":2,"t","lastet","opphav","sti","passordfelt","nyttPassord","nokkel"}` | Sida fikk hilsenen. `opphav` er det Chrome leverte meldingen med, `lastet` millisekunder siden sida begynte å laste, `passordfelt` slik det var da. `sti` er grov: tre ledd, og ledd med @, tall eller 16+ tegn blir «…». |
+| Side | `{"type":"hm-vist","v":2,"t"}` | 🔑-knappen kom fram, én gang per hilsen. |
+| Side | `{"type":"hm-avvist","v":2,"t","opphav"}` | Chrome sendte en melding (uten avsendervindu, `source === null`) med et opphav sida ikke kjente igjen. Svaret går på den medsendte porten. En ramme i sida får aldri svar. |
+
+`t` er `Date.now()` da sida sendte. Kommer meldingen fram mer enn tre sekunder
+senere, skriver appen det i loggen – da sov appen imens. Aldri e-post eller
+passord i noen av dem, og en feil i dem stopper aldri knappen.
 
 **Slik Chrome faktisk leverer kanalen** – målt på emulator med Chrome 113, ikke
 lest ut av dokumentasjonen, som beskriver det annerledes:
@@ -209,7 +213,8 @@ Nøkkelknappen:
 
 1. Lytter på `message`. Tar porten fra en melding med vårt eget opphav eller
    `android-app://…/no.haugemaskin.mobil`, og hører på `hm-hei` der – på porten
-   eller i selve meldingen. Alt annet overses.
+   eller i selve meldingen. Ingen andre får porten eller noe svar – bortsett fra
+   `hm-avvist` til en melding Chrome selv sendte (se tabellen over).
 2. Er `nokkel` sann, følger den med på sida (`MutationObserver`). Knappen – og
    stilen dens – lages **først** når det finnes et synlig passordfelt, så sider
    uten innlogging aldri får noe lagt inn. Knappen legges i `<body>`, utenfor

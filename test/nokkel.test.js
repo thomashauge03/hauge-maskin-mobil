@@ -33,6 +33,37 @@ test('utenfor appen finnes det ikke noe siste forsøk', async () => {
   assert.equal(await last({ Twa: { sisteForsok: async () => ({ linjer: [] }) } }, false).sisteForsok(), null);
 });
 
+test('siste forsøk blir glemt ved utlogging', async () => {
+  let glemt = 0;
+  await last({ Twa: { glemForsok: async () => { glemt++; } } }).glemForsok();
+  assert.equal(glemt, 1);
+  // Mangler den, eller feiler den, skal utloggingen likevel gå videre
+  await last({ Twa: {} }).glemForsok();
+  await last({ Twa: { glemForsok: async () => { throw new Error('nei'); } } }).glemForsok();
+});
+
+test('en annens nøkkel tar med seg siste forsøk', async () => {
+  let glemt = 0;
+  let fjernet = 0;
+  const n = last({
+    Nokkel: { status: async () => ({ epost: 'a@b.no', eier: 'en-annen' }), fjern: async () => { fjernet++; } },
+    Twa: { glemForsok: async () => { glemt++; } }
+  });
+  await n.ryddForAndre('meg');
+  assert.equal(fjernet, 1);
+  assert.equal(glemt, 1);
+});
+
+test('egen nøkkel blir liggende, og siste forsøk med den', async () => {
+  let glemt = 0;
+  const n = last({
+    Nokkel: { status: async () => ({ epost: 'a@b.no', eier: 'meg' }), fjern: async () => {} },
+    Twa: { glemForsok: async () => { glemt++; } }
+  });
+  await n.ryddForAndre('meg');
+  assert.equal(glemt, 0);
+});
+
 test('rare svar blir til tomme lister, ikke krasj', async () => {
   const svar = await last({ Twa: { sisteForsok: async () => ({ linjer: 'tull' }) } }).sisteForsok();
   assert.equal(svar.linjer.length, 0);

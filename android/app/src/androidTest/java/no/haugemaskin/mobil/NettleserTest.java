@@ -22,12 +22,13 @@ public class NettleserTest {
     @Test
     public void chrome_blir_beskrevet_med_versjon_og_signatur() throws Exception {
         Context ctx = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        assumeTrue("Enheten har ikke Google Chrome", Nettleser.stoltChrome(ctx) != null);
-        String versjon = ctx.getPackageManager().getPackageInfo("com.android.chrome", 0).versionName;
+        String pakke = Nettleser.stoltChrome(ctx);
+        assumeTrue("Enheten har ikke Google Chrome", pakke != null);
+        String versjon = ctx.getPackageManager().getPackageInfo(pakke, 0).versionName;
 
         String b = Nettleser.beskriv(ctx);
 
-        assertTrue(b, b.startsWith("com.android.chrome " + versjon));
-        assertTrue(b, b.contains("Googles signatur"));
+        assertTrue(b, b.contains(pakke + " " + versjon + " – Googles signatur"));
+        assertTrue(b, Nettleser.versjon(ctx, pakke).equals(versjon));
     }
 }

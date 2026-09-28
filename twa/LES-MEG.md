@@ -72,8 +72,18 @@ som `"nokkel": false` i `sider.json`; mangler feltet, er knappen på.
 **Kommer ikke knappen?** I appen (fra 1.16.1): Om → Nøkkel for innlogging →
 «Siste forsøk». Der står hvert steg fra sist et system ble åpnet: hvilken
 Chrome, om Chrome godtok `use_as_origin`, om kanalen åpnet seg, og hva sida
-svarte. Står det «Hilste sida» uten «Sida fikk hilsenen» etter, har ikke sida
-den nyeste snutten – eller den har en gammel i hurtigbufferen.
+svarte. Slik leses den:
+
+- **«Hilste sida» uten «Sida fikk hilsenen» etter:** sida har ikke den nyeste
+  snutten, har en gammel i hurtigbufferen, eller snutten ligger ikke inline i
+  HTML-en serveren sender.
+- **«Sida avviste Chrome-meldingen»:** Chrome leverte med et opphav snutten
+  ikke kjenner igjen – det står i linja.
+- **Mange like klokkeslett på rad:** klokkeslettet er når *appen* behandlet
+  steget. Like tider betyr at appen sov mens Chrome lå foran, og fikk stegene
+  samlet da den våknet. «kom fram … senere (appen sov?)» sier det samme.
+- **«Appen startet» rett etter «Sida er sendt til Chrome»:** Android avsluttet
+  appen mens Chrome lå foran, og kanalen døde med den.
 
 ## Hvilke sider det gjelder
 

@@ -232,14 +232,18 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .om-knapp[data-gaar="ja"] b { color: var(--dempa); }
 
 /* «Siste forsøk» i nøkkelarket. Lite og dempet – den er til feilsøking,
-   ikke til daglig bruk – men lesbar på et skjermbilde. */
+   ikke til daglig bruk – men lesbar på et skjermbilde. Ingen egen
+   rullefelt: bare arket ruller, så ett skjermbilde får med mest mulig.
+   Vanlig skrift får flere tegn per linje enn fast bredde; tallene står
+   likevel under hverandre. */
 .forsok { margin: 6px 0 4px; border-top: 1px solid var(--strek); padding-top: 8px; }
 .forsok summary { cursor: pointer; font-size: 14px; color: var(--dempa); padding: 8px 0; }
 .forsok-hjelp { font-size: 13px; line-height: 1.5; color: var(--dempa); margin: 4px 0 10px; }
 .forsok-logg {
-  margin: 0; padding: 10px 12px; max-height: 45dvh; overflow: auto;
+  margin: 0; padding: 10px 12px;
   background: var(--botn-3); border: 1px solid var(--strek); border-radius: 10px;
-  font: 11px/1.5 ui-monospace, Menlo, Consolas, monospace; color: #c9c9d3;
+  font: 11.5px/1.45 system-ui, -apple-system, Roboto, sans-serif; color: #c9c9d3;
+  font-variant-numeric: tabular-nums;
   white-space: pre-wrap; overflow-wrap: anywhere;
   user-select: text; -webkit-user-select: text;
 }

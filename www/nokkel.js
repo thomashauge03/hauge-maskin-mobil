@@ -53,22 +53,40 @@
   }
 
   /* Står det en nøkkel som tilhører en annen enn den som er logget inn nå,
-     skal den bort. Vet vi ikke hvem som er logget inn, er det også nok. */
+     skal den bort. Vet vi ikke hvem som er logget inn, er det også nok.
+     Siste forsøk var den andres, så det går samme vei. */
   async function ryddForAndre(meg) {
     const s = await lesStatus();
-    if (s && (!meg || s.eier !== meg)) await fjern();
+    if (s && (!meg || s.eier !== meg)) {
+      await fjern();
+      await glemForsok();
+    }
+  }
+
+  function twa() {
+    const c = window.Capacitor;
+    if (!c || !c.isNativePlatform || !c.isNativePlatform()) return null;
+    return (c.Plugins && c.Plugins.Twa) || null;
+  }
+
+  /* Ved utlogging: den neste på telefonen skal ikke se hvilke systemer den
+     forrige åpnet. Feiler det, skal utloggingen likevel gå videre. */
+  async function glemForsok() {
+    const t = twa();
+    if (!t || !t.glemForsok) return;
+    try {
+      await t.glemForsok();
+    } catch { /* ingenting mer å gjøre */ }
   }
 
   /* «Siste forsøk»: hva som skjedde sist et system ble åpnet fra appen –
      { linjer, nettleser }, eller null når appen ikke kan si det. Stegene
      skrives av TwaPlugin.java, aldri med e-post eller passord. */
   async function sisteForsok() {
-    const c = window.Capacitor;
-    if (!c || !c.isNativePlatform || !c.isNativePlatform()) return null;
-    const twa = c.Plugins && c.Plugins.Twa;
-    if (!twa || !twa.sisteForsok) return null;
+    const t = twa();
+    if (!t || !t.sisteForsok) return null;
     try {
-      const svar = await twa.sisteForsok();
+      const svar = await t.sisteForsok();
       return {
         linjer: Array.isArray(svar && svar.linjer) ? svar.linjer.map(String) : [],
         nettleser: (svar && typeof svar.nettleser === 'string') ? svar.nettleser : ''
@@ -78,5 +96,5 @@
     }
   }
 
-  window.HM_NOKKEL = { finst: () => !!plugin(), status, lagre, fjern, ryddForAndre, sisteForsok };
+  window.HM_NOKKEL = { finst: () => !!plugin(), status, lagre, fjern, ryddForAndre, sisteForsok, glemForsok };
 })();
