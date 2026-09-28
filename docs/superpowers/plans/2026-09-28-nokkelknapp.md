@@ -1,5 +1,15 @@
 # Nøkkelknappen – implementeringsplan
 
+> **Avvik under utføringen (28. september):** Ende til ende-testen på emulator
+> viste at Chrome leverer kanalen annerledes enn dokumentasjonen: porten kommer i
+> en vindusmelding med tom `data` og opphavet
+> `android-app://<vert>/no.haugemaskin.mobil`, og `hm-hei` kommer på porten.
+> Nøkkeldelen i `twa/hm-snutt.html` er derfor skrevet om etter Task 1: den tar
+> porten fra den meldingen, godtar det opphavet, er ett eneste `<script>` som
+> legger inn stilen selv, og lager knappen først når det finnes et passordfelt.
+> **`twa/hm-snutt.html` og `test/nokkelknapp.test.js` er fasit – ikke koden i
+> Task 1 under.** `TwaPlugin` logger hvert steg under taggen `HmKanal`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Én felles innlogging lagret kryptert i mobilappen, som en 🔑-knapp i hvert av systemene våre fyller inn når systemet er åpnet fra appen.

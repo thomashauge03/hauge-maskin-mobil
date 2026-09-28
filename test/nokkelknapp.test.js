@@ -39,15 +39,23 @@ function side(innhald = SKJEMA) {
   return window;
 }
 
-/* Det appen gjør gjennom Chrome: én melding med en port. */
-function kobleTil(window, { nokkel = true, opphav } = {}) {
+/* Slik Chrome faktisk leverer kanalen, målt på emulator (Chrome 113):
+   først en vindusmelding med TOM data og porten, med opphavet
+   android-app://<vert>/no.haugemaskin.mobil – så kommer hilsenen fra
+   appen på porten. heiPaaPorten: false er formen dokumentasjonen beskriver,
+   der hilsenen står i selve vindusmeldingen; den skal også virke. */
+const APPEN = 'android-app://rorlager.vercel.app/no.haugemaskin.mobil';
+
+function kobleTil(window, { nokkel = true, opphav = APPEN, heiPaaPorten = true } = {}) {
   const sendt = [];
   const port = { onmessage: null, postMessage: (m) => sendt.push(JSON.parse(m)) };
+  const hei = JSON.stringify({ type: 'hm-hei', v: 1, nokkel });
   const e = new window.Event('message');
-  Object.defineProperty(e, 'data', { value: JSON.stringify({ type: 'hm-hei', v: 1, nokkel }) });
-  Object.defineProperty(e, 'origin', { value: opphav || window.location.origin });
+  Object.defineProperty(e, 'data', { value: heiPaaPorten ? '' : hei });
+  Object.defineProperty(e, 'origin', { value: opphav });
   Object.defineProperty(e, 'ports', { value: [port] });
   window.dispatchEvent(e);
+  if (heiPaaPorten && port.onmessage) port.onmessage({ data: hei });
   return { sendt, svar: (m) => port.onmessage && port.onmessage({ data: JSON.stringify(m) }) };
 }
 
@@ -64,6 +72,25 @@ test('ingen knapp når meldingen har et fremmed opphav', () => {
   const w = side();
   kobleTil(w, { opphav: 'https://ond.example' });
   assert.equal(knapp(w), null);
+});
+
+test('en annen app blir ikke hørt på', () => {
+  const w = side();
+  kobleTil(w, { opphav: 'android-app://rorlager.vercel.app/no.haugemaskin.mobil.ond' });
+  assert.equal(knapp(w), null);
+});
+
+test('hilsenen kan også stå i selve vindusmeldingen', () => {
+  const w = side();
+  kobleTil(w, { opphav: w.location.origin, heiPaaPorten: false });
+  assert.equal(synleg(w), true);
+});
+
+test('uten passordfelt blir det aldri lagt noe inn i sida', () => {
+  const w = side('<form><input id="navn" type="text"></form>');
+  kobleTil(w);
+  assert.equal(knapp(w), null);
+  assert.equal(w.document.getElementById('hm-nokkel-stil'), null);
 });
 
 test('ingen knapp når appen ikke har nøkkel til denne sida', () => {
@@ -144,13 +171,24 @@ test('et svar ingen har bedt om, blir ikke fylt inn', () => {
   assert.equal(w.document.getElementById('passord').value, '');
 });
 
-test('uten passordfelt blir ingenting rørt', () => {
-  const w = side('<form><input id="navn" type="text"></form>');
+test('forsvinner passordfeltet mellom trykk og svar, blir ingenting rørt', async () => {
+  const w = side();
   const { svar } = kobleTil(w);
-  knapp(w).click(); // skjult, men et trykk skal likevel ikke fylle noe
+  knapp(w).click();
+  w.document.getElementById('passord').setAttribute('data-skjult', '');
   svar({ type: 'hm-nokkel', epost: 'ola@hauge.no', passord: 'hemmelig' });
-  assert.equal(w.document.getElementById('navn').value, '');
+  assert.equal(w.document.getElementById('epost').value, '');
+  assert.equal(w.document.getElementById('passord').value, '');
   assert.equal(knapp(w).textContent, 'Fant ikke innloggingen');
+});
+
+test('passordfeltet som kommer etter hilsenen får knappen', async () => {
+  const w = side('<div id="rot"></div>');
+  kobleTil(w);
+  assert.equal(knapp(w), null);
+  w.document.getElementById('rot').innerHTML = SKJEMA;
+  await tikk();
+  assert.equal(synleg(w), true);
 });
 
 test('et nei fra appen står på knappen', () => {

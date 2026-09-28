@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -55,6 +56,12 @@ public class TwaPlugin extends Plugin {
 
     /** Svarer ikke nettleseren innen dette, faller JavaScript tilbake til Custom Tab. */
     private static final long TIDSGRENSE_MS = 4000;
+
+    /**
+     * adb logcat -s HmKanal viser hvert steg i kanalen. Aldri e-post eller
+     * passord – bare hva som skjedde, og med hvilket opphav.
+     */
+    private static final String LOGG = "HmKanal";
 
     private interface VedKlient {
         void klar(CustomTabsClient klient);
@@ -148,7 +155,8 @@ public class TwaPlugin extends Plugin {
             }
             kanal.okt = okt;
             // Krever at warmup er kalt – det gjør koble() når bindingen kommer opp.
-            okt.validateRelationship(CustomTabsService.RELATION_USE_AS_ORIGIN, Uri.parse(opphav), null);
+            boolean sjekkes = okt.validateRelationship(CustomTabsService.RELATION_USE_AS_ORIGIN, Uri.parse(opphav), null);
+            Log.d(LOGG, "Åpner " + opphav + ", nokkel=" + tillatt + ", assetlinks sjekkes: " + sjekkes);
 
             TrustedWebActivityIntentBuilder byggjar = new TrustedWebActivityIntentBuilder(Uri.parse(url));
             // Alle våre opphav blir sendt med. Ellers mister brukeren fullskjerm
@@ -283,10 +291,18 @@ public class TwaPlugin extends Plugin {
             if (hending != NAVIGATION_FINISHED || okt == null) return;
             Uri o = Uri.parse(opphav);
             try {
-                okt.requestPostMessageChannel(o, o, new Bundle());
-            } catch (Exception ignored) {
+                boolean bedt = okt.requestPostMessageChannel(o, o, new Bundle());
+                Log.d(LOGG, "Side lastet, ba om kanal til " + opphav + ": " + bedt);
+            } catch (Exception e) {
                 // Eldre Chrome: ingen kanal, ingen knapp
+                Log.d(LOGG, "Fikk ikke bedt om kanal: " + e);
             }
+        }
+
+        @Override
+        public void onRelationshipValidationResult(int relasjon, @NonNull Uri hvem, boolean godkjent,
+                                                   @Nullable Bundle ekstra) {
+            Log.d(LOGG, "assetlinks for " + hvem + " (relasjon " + relasjon + "): " + godkjent);
         }
 
         @Override
@@ -294,13 +310,15 @@ public class TwaPlugin extends Plugin {
             if (okt == null) return;
             boolean kan = NokkelRegel.grunnTilNei(opphav, tillatt, hvelv.les() != null) == null;
             try {
-                okt.postMessage(new JSONObject()
+                int svar = okt.postMessage(new JSONObject()
                         .put("type", "hm-hei")
                         .put("v", 1)
                         .put("nokkel", kan)
                         .toString(), null);
-            } catch (Exception ignored) {
+                Log.d(LOGG, "Kanal klar til " + opphav + ", hilste med nokkel=" + kan + " (svar " + svar + ")");
+            } catch (Exception e) {
                 // Uten hilsen blir det bare ingen knapp
+                Log.d(LOGG, "Fikk ikke hilst: " + e);
             }
         }
 
@@ -321,9 +339,11 @@ public class TwaPlugin extends Plugin {
                 JSONObject ut = new JSONObject().put("type", "hm-nokkel");
                 if (nei != null) ut.put("feil", nei);
                 else ut.put("epost", n.epost).put("passord", n.passord);
-                okt.postMessage(ut.toString(), null);
-            } catch (Exception ignored) {
+                int svar = okt.postMessage(ut.toString(), null);
+                Log.d(LOGG, opphav + " ba om nøkkelen: " + (nei == null ? "gitt" : nei) + " (svar " + svar + ")");
+            } catch (Exception e) {
                 // Sida sier selv fra etter tre sekunder uten svar
+                Log.d(LOGG, "Fikk ikke svart: " + e);
             }
         }
     }

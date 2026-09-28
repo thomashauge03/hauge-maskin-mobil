@@ -167,14 +167,25 @@ Alle er JSON-tekst.
 
 | Fra | Melding | Når |
 |---|---|---|
-| App | `{"type":"hm-hei","v":1,"nokkel":true}` | Første melding, bærer porten. `nokkel` er sann når appen har en nøkkel **og** har lov å gi den hit. |
+| App | `{"type":"hm-hei","v":1,"nokkel":true}` | Første melding fra appen. `nokkel` er sann når appen har en nøkkel **og** har lov å gi den hit. |
 | Side | `{"type":"hm-hent"}` | Når noen trykker 🔑. |
 | App | `{"type":"hm-nokkel","epost":"…","passord":"…"}` | Svar når reglene sier ja. |
 | App | `{"type":"hm-nokkel","feil":"…"}` | Svar når de sier nei. |
 
-Bare den første meldingen fra appen bærer porten. Kommer den før sida lytter, er
-den tapt for den sidelastingen. Derfor må lytteren ligge **inline i HTML-en
-serveren sender**, aldri i en komponent som starter etter hydrering.
+**Slik Chrome faktisk leverer kanalen** – målt på emulator med Chrome 113, ikke
+lest ut av dokumentasjonen, som beskriver det annerledes:
+
+1. Sida får en vindusmelding med **tom** `data` og porten i `ports[0]`.
+   Opphavet er `android-app://<vert>/no.haugemaskin.mobil`, ikke sidas eget.
+2. `hm-hei` kommer deretter **på porten**. Det samme gjør svarene.
+
+Snutten godtar begge formene: hilsenen på porten, eller i selve
+vindusmeldingen slik dokumentasjonen beskriver. Opphavet må være vårt eget
+eller `android-app://…/no.haugemaskin.mobil`.
+
+Porten kommer bare én gang per sidelasting. Lytter ikke sida da, er kanalen
+tapt. Derfor må lytteren ligge **inline i HTML-en serveren sender**, aldri i en
+komponent som starter etter hydrering.
 
 ### 4. HM-snutten i systemene
 
@@ -182,14 +193,17 @@ serveren sender**, aldri i en komponent som starter etter hydrering.
 for seg:
 
 - **Lukkeren**, uendret.
-- **Nøkkelknappen**, ny: én `<style>` og ett `<script>`, uten avhengigheter.
+- **Nøkkelknappen**, ny: ett eneste `<script>` uten avhengigheter. Stilen
+  legger den inn selv, så den er lett å putte i et React-skall.
 
 Nøkkelknappen:
 
-1. Lytter på `message`. Godtar bare en melding med `event.origin ===
-   location.origin`, en port, og `type: "hm-hei"`. Alt annet overses.
-2. Er `nokkel` sann, følger den med på sida (`MutationObserver`) og viser knappen
-   så lenge det finnes et synlig passordfelt. Knappen legges i `<body>`, utenfor
+1. Lytter på `message`. Tar porten fra en melding med vårt eget opphav eller
+   `android-app://…/no.haugemaskin.mobil`, og hører på `hm-hei` der – på porten
+   eller i selve meldingen. Alt annet overses.
+2. Er `nokkel` sann, følger den med på sida (`MutationObserver`). Knappen – og
+   stilen dens – lages **først** når det finnes et synlig passordfelt, så sider
+   uten innlogging aldri får noe lagt inn. Knappen legges i `<body>`, utenfor
    rammeverkets rot, og plasseres under feltet med `position: fixed`. Den
    flytter seg med feltet ved rulling og når tastaturet endrer skjermen. React
    og andre rammeverk eier ikke den noden og kan ikke rive den.
