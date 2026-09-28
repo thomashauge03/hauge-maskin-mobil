@@ -18,7 +18,24 @@ Det er fordi appen ikke ligger i Play Butikk – trykk **Tillat** og fortsett.
 
 Appen sier selv fra når det kommer en ny versjon: du får et rødt felt
 øverst med **Last ned**. Den sjekker `versjon.json` på nettsiden ved hver
-oppstart.
+oppstart, og hver gang den kommer fram igjen.
+
+### Påbudt oppdatering
+
+Står `minimum` i `versjon.json` over versjonen på telefonen, dekker en skjerm
+hele appen: **Appen må oppdateres**. Den har ingen lukkeknapp, og blir stående
+også uten nett – appen husker det siste svaret.
+
+- Sett `minimum` til den nye versjonen når alle **må** over. Står den lavere,
+  får folk bare det røde feltet.
+- Gikk et slipp galt, senker du `minimum` igjen. Da forsvinner skjermen neste
+  gang appen får kontakt.
+- Virker fra og med 1.15.0. Eldre versjoner kjenner ikke feltet og viser bare
+  det røde feltet, som kan trykkes bort.
+
+**Rekkefølgen ved slipp:** last opp APK-en til GitHub Releases **før**
+`versjon.json` blir pushet. Pushen legger fila ut med én gang, og peker den på
+en APK som ikke finnes ennå, står alle foran en nedlastingsknapp som gir 404.
 
 ### iPhone
 

@@ -4,7 +4,7 @@
 
 const SIDER_URL =
   'https://raw.githubusercontent.com/thomashauge03/hauge-maskin-app/main/sider.json';
-const VERSJON = '1.14.1';
+const VERSJON = '1.15.0';
 
 /* Den lagrede lista hører til én bruker, ikke til telefonen.
    Logger Ola ut og Kari inn på samme telefon, ville Kari sett Olas liste
@@ -429,16 +429,8 @@ const erNativ = () => {
 };
 const erAndroid = () => /android/i.test(navigator.userAgent);
 
-// 1.10.0 er nyere enn 1.9.0, så vi kan ikke sammenligne som tekst
-function nyareEnn(a, b) {
-  const x = String(a).split('.').map(Number);
-  const y = String(b).split('.').map(Number);
-  for (let i = 0; i < Math.max(x.length, y.length); i++) {
-    const p = x[i] || 0, q = y[i] || 0;
-    if (p !== q) return p > q;
-  }
-  return false;
-}
+// Står i oppdatering.js, der den er testet
+const { nyareEnn } = window.HM_OPPDATERING;
 
 function opneNedlasting(url) {
   const mal = url || APK_FALLBACK;
@@ -473,12 +465,49 @@ function visOppdatering(info, tvinga = false) {
   $('oppdatering').hidden = hoppa && !tvinga;
 }
 
+/* ---------- Påbudt oppdatering ----------
+   Står `minimum` i versjon.json over versjonen på telefonen, dekker en skjerm
+   hele appen til den nye er installert. Hva som gjelder avgjøres i
+   oppdatering.js. */
+const MINIMUM_LAGER = 'hm-minimum';
+
+function lesMinimum() {
+  try {
+    return localStorage.getItem(MINIMUM_LAGER);
+  } catch {
+    return null;
+  }
+}
+
+function huskMinimum(minimum) {
+  try {
+    if (minimum) localStorage.setItem(MINIMUM_LAGER, minimum);
+    else localStorage.removeItem(MINIMUM_LAGER);
+  } catch { /* uten lagring gjelder bare svaret vi fikk nå */ }
+}
+
+/* Ingen lukkeknapp, med vilje. apk mangler når vi bare vet det fra sist –
+   da går knappen til utgivelsessida, som alltid har den nyeste. */
+function visPaabudt(apk) {
+  $('paabudtVersjon').textContent = VERSJON;
+  $('paabudtLast').onclick = () => opneNedlasting(apk);
+  $('paabudt').hidden = false;
+}
+
 async function sjekkVersjon() {
   // Bare den installerte Android-appen har noe å oppdatere
   if (!erNativ()) return;
   const info = await hentVersjonsinfo();
-  if (!info || !nyareEnn(info.versjon, VERSJON)) return;
-  visOppdatering(info);
+  const svar = window.HM_OPPDATERING.vurder({ installert: VERSJON, info, huska: lesMinimum() });
+  huskMinimum(svar.minimum);
+
+  if (svar.tilstand === 'maa') {
+    visPaabudt(info && info.apk);
+    return;
+  }
+  // Minimum kan være senket siden sist, og da skal skjermen bort igjen
+  $('paabudt').hidden = true;
+  if (svar.tilstand === 'kan') visOppdatering(info);
 }
 
 /* Manuell sjekk fra Om-arket. Den automatiske sier bare fra når det finnes
@@ -652,7 +681,6 @@ async function startApp() {
      faktisk står noe under den. Uten dette ville filmen vist seg å være
      et teppe over en tom skjerm. */
   await hentSider({ stille: !!(lagra && lagra.length) });
-  sjekkVersjon();
   tilbyInstallasjon();
 }
 
@@ -678,12 +706,12 @@ function startBakgrunn() {
        satt bakgrunnen i gang igjen bak filmen første gang noe annet rørte
        seg – og da tegner vi noe ingen ser. */
     bakgrunn.pause(
-      !$('ark').hidden || !$('om').hidden || !$('port').hidden ||
+      !$('ark').hidden || !$('om').hidden || !$('port').hidden || !$('paabudt').hidden ||
       !!document.querySelector('.lastar')
     );
   };
   const vakt = new MutationObserver(sjaa);
-  for (const id of ['ark', 'om', 'port']) {
+  for (const id of ['ark', 'om', 'port', 'paabudt']) {
     vakt.observe($(id), { attributes: true, attributeFilter: ['hidden'] });
   }
   sjaa();
@@ -804,12 +832,24 @@ $('omLoggUt').addEventListener('click', loggUtOgTilbake);
 /* ---------- I gang ---------- */
 (function start() {
   ryddGamleNoklar();
+
+  /* Påbudt oppdatering går foran alt, også innloggingen. Visste vi fra sist
+     at denne versjonen er for gammel, dekker skjermen med én gang, før nettet
+     har rukket å svare. Appen starter som vanlig under den, så den er klar i
+     det øyeblikket minimum eventuelt blir senket. */
+  if (erNativ()) {
+    const fraSist = window.HM_OPPDATERING.vurder({ installert: VERSJON, info: null, huska: lesMinimum() });
+    if (fraSist.tilstand === 'maa') visPaabudt();
+  }
   opneEllerVis({ medFilm: true });
+  sjekkVersjon();
 
   /* Når appen kommer fram igjen: står porten åpen, sjekker vi om noen har
-     godkjent oss i mellomtiden. Ellers henter vi lista på nytt. */
+     godkjent oss i mellomtiden. Ellers henter vi lista på nytt. Versjonen
+     sjekkes uansett – en app som står i lomma i ukevis skal også få beskjed. */
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) return;
+    sjekkVersjon();
     if (!$('port').hidden) opneEllerVis();
     else hentSider({ stille: true });
   });

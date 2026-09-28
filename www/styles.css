@@ -511,6 +511,13 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 }
 .port[hidden] { display: none; }
 
+/* Påbudt oppdatering ligger over alt – også åpningssekvensen (200), som
+   ellers kunne spilt over den de første sekundene. */
+.port.paabudt { z-index: 300; }
+.port.paabudt .port-tekst b { color: var(--tekst); }
+/* Samme lag som .port-tekst, som står lenger ned og ellers ville vunnet */
+.port.paabudt .paabudt-hjelp { margin: 16px 0 0; font-size: 13px; }
+
 .port-innhald { width: 100%; max-width: 380px; }
 .port-logo { display: block; height: 34px; margin: 0 auto 28px; opacity: .9; }
 

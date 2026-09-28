@@ -96,6 +96,23 @@
     </div>
   </div>
 
+  <!-- Påbudt oppdatering. Ligger over alt, også porten og åpningssekvensen,
+       og har ingen lukkeknapp. Se sjekkVersjon i app.js. -->
+  <div id="paabudt" class="port paabudt" hidden>
+    <div class="port-innhald">
+      <img class="port-logo" src="assets/logo-trim.png" alt="Hauge Maskin" />
+      <h1 class="port-tittel">Appen må oppdateres</h1>
+      <p class="port-tekst">
+        Versjon <b id="paabudtVersjon">–</b> er for gammel og kan ikke brukes lenger.
+        Last ned den nye og installer den over denne. Innloggingen din blir med.
+      </p>
+      <button id="paabudtLast" class="knapp knapp-stor">Last ned ny versjon</button>
+      <p class="port-tekst paabudt-hjelp">
+        Spør telefonen om lov til å installere, trykker du Tillat.
+      </p>
+    </div>
+  </div>
+
   <header class="topp">
     <img class="logo" src="assets/logo-trim.png" alt="Hauge Maskin" />
     <div class="tittel">
@@ -193,6 +210,7 @@
 
   <script src="nav.js"></script>
   <script src="lastar.js"></script>
+  <script src="oppdatering.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
