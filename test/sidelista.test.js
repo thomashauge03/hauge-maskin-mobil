@@ -90,3 +90,13 @@ test('søket: æ, ø, å og de gamle skrivemåtene', () => {
   assert.ok(!treffer(s, 'lager tripletex'));
   assert.ok(treffer(s, ''));
 });
+
+test('søket treffer hvert felt for seg, normalisert', () => {
+  const b = side({ name: 'Bjørn', url: 'https://kontor.vercel.app/', group: 'Annet', help: '' });
+  assert.ok(treffer(b, 'bjorn') && treffer(b, 'bjoern'));   // navnet alene, ikke adressen
+  assert.ok(treffer(b, 'kontor.vercel'));                   // adressen alene
+  assert.ok(treffer(side({ group: 'Økonomi', help: 'Håkon godkjenner' }), 'okonomi haakon')); // gruppe + forklaring
+  assert.equal(normaliser('café'), 'cafe');                 // aksenter fjernes
+  assert.equal(normaliser('Ærlig'), 'aerlig');              // æ blir ae
+  assert.equal(bareMine(lesSider({ pages: [side({ id: 7 })] }), [7], false).length, 1); // tall-id fra navet
+});
