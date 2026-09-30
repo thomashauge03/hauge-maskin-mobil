@@ -35,5 +35,40 @@
       }));
   }
 
-  window.HM_SIDER = { trygdAdresse, lesSider };
+  /* Bare sidene navet sier jeg ser.
+     mine – side-id-ene fra mine_sider. alle – adminer ser hele lista.
+     En side som ikke er nevnt, er IKKE min: en ny side ingen har gitt meg,
+     skal ikke dukke opp av seg selv. Se migrasjon 0017 i adminbordet. */
+  function bareMine(liste, mine, alle) {
+    if (alle) return liste;
+    const mineSett = new Set((mine || []).map(String));
+    return liste.filter((p) => mineSett.has(p.id));
+  }
+
+  /* Søket. «bjorn» og «bjoern» finner Bjørn, «haakon» finner Håkon – aa og
+     oe er det folk skriver på et tastatur uten æøå. Samme regel som søket i
+     adminbordet (src/lib/appsok.ts). Repoene deler ikke kode, så den står to
+     steder, og er testet begge. */
+  function normaliser(tekst) {
+    return String(tekst || '')
+      .toLowerCase()
+      .replace(/æ/g, 'ae')
+      .replace(/ø/g, 'o')
+      .replace(/å/g, 'a')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/aa/g, 'a')
+      .replace(/oe/g, 'o')
+      .trim();
+  }
+
+  /* Treffer siden alle ordene i søket? Navn, adresse, gruppe og forklaring. */
+  function treffer(side, sok) {
+    const ord = normaliser(sok).split(/\s+/).filter(Boolean);
+    if (!ord.length) return true;
+    const tekst = [side.name, side.url, side.group, side.help].map(normaliser).join(' ');
+    return ord.every((o) => tekst.includes(o));
+  }
+
+  window.HM_SIDER = { trygdAdresse, lesSider, bareMine, normaliser, treffer };
 })();

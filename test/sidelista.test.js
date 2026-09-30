@@ -13,7 +13,7 @@ function last() {
   return window.HM_SIDER;
 }
 
-const { lesSider, trygdAdresse } = last();
+const { lesSider, trygdAdresse, bareMine, normaliser, treffer } = last();
 const side = (ekstra) => ({ id: 'rorlager', name: 'Rørlager', url: 'https://rorlager.vercel.app/', ...ekstra });
 
 test('bare https slipper gjennom', () => {
@@ -60,4 +60,33 @@ test('manglende gruppe og farge får standardverdier', () => {
 test('trygdAdresse gir null for alt som ikke er https', () => {
   assert.equal(trygdAdresse('http://x.no'), null);
   assert.equal(trygdAdresse('https://x.no/a'), 'https://x.no/a');
+});
+
+const tre = () => lesSider({ pages: [side({ id: 'a', name: 'A' }), side({ id: 'b', name: 'B' }), side({ id: 'c', name: 'C' })] });
+
+test('bare sidene navet gir, i lista sin rekkefølge', () => {
+  assert.equal(bareMine(tre(), ['c', 'a'], false).map((s) => s.id).join(','), 'a,c');
+});
+
+test('ingen sider gitt betyr ingen sider – ikke hele lista', () => {
+  assert.equal(bareMine(tre(), [], false).length, 0);
+  assert.equal(bareMine(tre(), null, false).length, 0);
+});
+
+test('adminer ser alt', () => {
+  assert.equal(bareMine(tre(), [], true).length, 3);
+});
+
+test('en id som ikke står i fila, blir ikke til noe', () => {
+  assert.equal(bareMine(tre(), ['finnes-ikke'], false).length, 0);
+});
+
+test('søket: æ, ø, å og de gamle skrivemåtene', () => {
+  assert.equal(normaliser('Bjørn'), normaliser('bjoern'));
+  assert.equal(normaliser('Håkon'), normaliser('HAAKON'));
+  const s = side({ name: 'Rørlager', group: 'Lager', help: 'Rør og deler' });
+  assert.ok(treffer(s, 'rorlager'));
+  assert.ok(treffer(s, 'lager deler'));
+  assert.ok(!treffer(s, 'lager tripletex'));
+  assert.ok(treffer(s, ''));
 });
