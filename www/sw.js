@@ -4,7 +4,7 @@
    lagrede kopien uten å spørre nettet, så et uendret navn betyr at alle som
    har appen på hjem-skjermen fortsetter med den gamle utgaven på ubestemt
    tid – også etter at en ny er lagt ut. */
-const CACHE = 'hauge-maskin-v21';
+const CACHE = 'hauge-maskin-v22';
 const SKALET = [
   './',
   './index.html',
@@ -45,14 +45,22 @@ self.addEventListener('fetch', (e) => {
     url.hostname === 'raw.githubusercontent.com' ||
     url.pathname.endsWith('/versjon.json');
   if (alltidFersk) {
+    /* Lagret under adressen uten spørredel. Oppdater-knappen legger på ?t=
+       for å gå forbi GitHubs mellomlager, og før ble hver slik adresse en ny
+       kopi på en halv megabyte – mens reservekopien aldri ble funnet, fordi
+       neste adresse var en annen. Bare svar som er ok, blir lagret: et 429
+       skal ikke bli reservekopien. */
+    const nokkel = url.origin + url.pathname;
     e.respondWith(
       fetch(e.request)
         .then((res) => {
-          const kopi = res.clone();
-          caches.open(CACHE).then((c) => c.put(e.request, kopi));
+          if (res.ok) {
+            const kopi = res.clone();
+            caches.open(CACHE).then((c) => c.put(nokkel, kopi));
+          }
           return res;
         })
-        .catch(() => caches.match(e.request))
+        .catch(() => caches.match(nokkel))
     );
     return;
   }

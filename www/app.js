@@ -4,7 +4,7 @@
 
 const SIDER_URL =
   'https://raw.githubusercontent.com/thomashauge03/hauge-maskin-app/main/sider.json';
-const VERSJON = '1.16.1';
+const VERSJON = '1.17.0';
 
 /* Den lagrede lista hører til én bruker, ikke til telefonen.
    Logger Ola ut og Kari inn på samme telefon, ville Kari sett Olas liste
@@ -25,7 +25,7 @@ function ryddGamleNoklar() {
 
 // Står i sidelista.js, der de er testet – også regelen om at bare https
 // slipper gjennom
-const { trygdAdresse, lesSider } = window.HM_SIDER;
+const { trygdAdresse, lesSider, bareMine, treffer } = window.HM_SIDER;
 
 const $ = (id) => document.getElementById(id);
 let sider = [];
@@ -50,24 +50,46 @@ function skrivLokalt(liste) {
 
 const sistHenta = () => localStorage.getItem(lagerTidNokkel());
 
-/* Tilgangslista blir lagret for seg.
-   Får vi ikke tak i den ved neste henting, vil vi fortsatt kunne vise en
+/* Sidene jeg ser, blir lagret for seg.
+   Får vi ikke tak i dem ved neste henting, vil vi fortsatt kunne vise en
    FERSK sideliste – filtrert med det vi visste sist. Uten dette måtte vi
    enten vise den gamle lista, eller vise sider folk ikke skal se. */
-const valNokkel = () => `${lagerNokkel()}-val`;
+const mineNokkel = () => `${lagerNokkel()}-mine`;
+const alleNokkel = () => `${lagerNokkel()}-alle`;
 
-function lesVal() {
+function lesMine() {
   try {
-    const raa = localStorage.getItem(valNokkel());
-    return raa ? JSON.parse(raa) : null;
+    const raa = localStorage.getItem(mineNokkel());
+    const liste = raa ? JSON.parse(raa) : null;
+    return Array.isArray(liste) ? liste.map(String) : null;
   } catch {
     return null;
   }
 }
 
-function skrivVal(val) {
+function skrivMine(mine) {
   try {
-    localStorage.setItem(valNokkel(), JSON.stringify(val || []));
+    localStorage.setItem(mineNokkel(), JSON.stringify(mine));
+    // Avvikslista fra før 1.17 er erstattet av denne
+    localStorage.removeItem(`${lagerNokkel()}-val`);
+  } catch { /* ikke kritisk */ }
+}
+
+/* Adminer ser alle sidene. Lagret, så det gjelder også uten nett. */
+let alleSider = false;
+
+function lesAlle() {
+  try {
+    return localStorage.getItem(alleNokkel()) === 'ja';
+  } catch {
+    return false;
+  }
+}
+
+function skrivAlle(alle) {
+  try {
+    if (alle) localStorage.setItem(alleNokkel(), 'ja');
+    else localStorage.removeItem(alleNokkel());
   } catch { /* ikke kritisk */ }
 }
 
@@ -76,51 +98,47 @@ function tomLokalt() {
   try {
     localStorage.removeItem(lagerNokkel());
     localStorage.removeItem(lagerTidNokkel());
-    localStorage.removeItem(valNokkel());
+    localStorage.removeItem(mineNokkel());
+    localStorage.removeItem(alleNokkel());
+    localStorage.removeItem(`${lagerNokkel()}-val`);
   } catch { /* ingenting å gjøre */ }
   sider = [];
 }
 
-/* Tar bort sidene jeg ikke skal se.
-   En side som ikke er nevnt i svaret fra navet er standard, og skal vises.
-   Derfor `!== false` og ikke `=== true` – fraværet av en rad betyr ja. */
-function filtrerEtterTilgang(liste, val) {
-  if (!Array.isArray(val) || !val.length) return liste;
-  const avvik = new Map(val.map((v) => [String(v.side_id), v.syn]));
-  return liste.filter((p) => avvik.get(p.id) !== false);
-}
-
-/* ---------- Hent lista ---------- */
-async function hentSider({ stille = false } = {}) {
+/* ---------- Hent lista ----------
+   fersk: Oppdater-knappen. Går forbi GitHubs mellomlager, som ellers kan
+   holde på en endret fil i opptil fem minutter. */
+async function hentSider({ stille = false, fersk = false } = {}) {
   const knapp = $('btnOppdater');
   if (!stille) knapp.classList.add('gaar');
   try {
-    // Fersk kopi hver gang – GitHub mellomlagrer ellers fila i noen minutter
-    const url = `${SIDER_URL}?t=${Date.now()}`;
-    const res = await fetch(url, { cache: 'no-store' });
+    /* Automatisk henting spør med fast adresse, og nettleseren sender selv
+       med hva den har fra før (If-None-Match). Er fila uendret, svarer GitHub
+       304 uten innhold – mot 0,4 MB før, hver gang appen kom fram. */
+    const res = fersk
+      ? await fetch(`${SIDER_URL}?t=${Date.now()}`, { cache: 'no-store' })
+      : await fetch(SIDER_URL, { cache: 'no-cache' });
     if (!res.ok) throw new Error(`Fikk ${res.status} fra serveren`);
-    const alle = lesSider(await res.json());
+    const felles = lesSider(await res.json());
 
-    /* Lista over er den samme for alle. Navet sier hvor jeg avviker.
+    /* Navet sier hvilke sider jeg ser. En side som ikke er nevnt, er ikke min.
 
-       Får vi ikke svar, bruker vi det vi visste sist i stedet for å gi opp.
-       Da blir sidelista fortsatt fersk – navn, adresser og grupper er
-       oppdaterte – og tilgangen er den fra forrige gang.
+       Får vi ikke svar, bruker vi det vi visste sist. Da blir sidelista
+       fortsatt fersk – navn, adresser og grupper er oppdaterte – og tilgangen
+       er den fra forrige gang. Har vi aldri visst det, vises den lagrede
+       lista som den var. Aldri hele lista. */
+    const ferske = await window.HM_NAV.mineSider();
+    const mine = ferske === null ? lesMine() : ferske;
+    if (mine === null) throw new Error('Vet ikke hvilke sider som er mine');
 
-       Den forrige utgaven viste den LAGREDE lista i dette tilfellet, og da
-       frøs hele lista til noe annet endret seg. Et hikk på nettet holdt, og
-       endringer gjort i adminbordet dukket aldri opp. */
-    const ferskt = await window.HM_NAV.mineSideval();
-    const val = ferskt === null ? lesVal() : ferskt;
-
-    sider = filtrerEtterTilgang(alle, val);
+    sider = bareMine(felles, mine, alleSider);
     teikn();
 
-    if (ferskt === null) {
+    if (ferske === null) {
       // Ikke lagre en liste vi ikke vet er riktig filtrert – men vis den.
       visStatus('Oppdatert · tilgangen er fra sist');
     } else {
-      skrivVal(ferskt);
+      skrivMine(ferske);
       skrivLokalt(sider);
       visStatus();
     }
@@ -177,16 +195,16 @@ function bokstavFor(side) {
 }
 
 function teikn() {
-  const sok = $('sok').value.trim().toLowerCase();
-  const treff = sider.filter(
-    (p) => !sok || p.name.toLowerCase().includes(sok) || p.url.toLowerCase().includes(sok)
-  );
+  const sok = $('sok').value;
+  const treff = sider.filter((p) => treffer(p, sok));
 
   const liste = $('liste');
   liste.innerHTML = '';
 
   if (!treff.length) {
-    visTomt(sok ? `Fant ingen sider som passer «${$('sok').value.trim()}».` : 'Ingen sider ennå.');
+    visTomt(sok.trim()
+      ? `Fant ingen sider som passer «${sok.trim()}».`
+      : 'Du har ikke fått noen sider ennå. Den som styrer tilgangene legger deg i en gruppe.');
     return;
   }
   $('tomt').hidden = true;
@@ -575,8 +593,8 @@ $('btnSok').addEventListener('click', () => {
     teikn();
   }
 });
-$('btnOppdater').addEventListener('click', () => hentSider());
-$('btnProvIgjen').addEventListener('click', () => hentSider());
+$('btnOppdater').addEventListener('click', () => hentSider({ fersk: true }));
+$('btnProvIgjen').addEventListener('click', () => hentSider({ fersk: true }));
 
 $('arkOpne').addEventListener('click', () => {
   $('ark').hidden = true;
@@ -712,10 +730,13 @@ async function avgjerPort() {
 
   switch (svar.tilstand) {
     case 'godkjent':
+      alleSider = !!svar.alle;
+      skrivAlle(alleSider);
       $('port').hidden = true;
       return true;
 
     case 'utanNett':
+      alleSider = lesAlle();
       /* Uten nett, men med en lagret liste fra før: slipp inn på det vi har.
          Å stenge noen ute av appen fordi de står uten dekning ville vært
          å gjøre den ene tingen appen finnes for – å være til stede ute på
@@ -891,6 +912,7 @@ async function loggUtOgTilbake() {
   tomLokalt();
   meg = null;
   mittEpost = null;
+  alleSider = false;
   appenGaar = false;
   /* Rives, ikke bare pauses. Den som logger ut skal ikke ha en WebGL-
      kontekst gående bak innloggingsskjermen. */
@@ -923,9 +945,18 @@ $('omLoggUt').addEventListener('click', loggUtOgTilbake);
 
   /* Når appen kommer fram igjen: står porten åpen, sjekker vi om noen har
      godkjent oss i mellomtiden. Ellers henter vi lista på nytt. Versjonen
-     sjekkes uansett – en app som står i lomma i ukevis skal også få beskjed. */
+     sjekkes uansett – en app som står i lomma i ukevis skal også få beskjed.
+
+     Men ikke oftere enn hvert minutt. Appen kommer fram hver gang noen går
+     tilbake fra et system, og med 200 brukere er det mange ganger om dagen
+     der ingenting er endret. */
+  const FRAM_IGJEN_MS = 60_000;
+  let sistFram = Date.now();
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) return;
+    const naa = Date.now();
+    if (naa - sistFram < FRAM_IGJEN_MS) return;
+    sistFram = naa;
     sjekkVersjon();
     if (!$('port').hidden) opneEllerVis();
     else hentSider({ stille: true });

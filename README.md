@@ -53,10 +53,16 @@ Samme adresse fungerer også på Android om du ikke vil installere APK-en.
 - Henter den felles sidelisten fra `sider.json` i
   [hauge-maskin-app](https://github.com/thomashauge03/hauge-maskin-app) – samme
   fil som skrivebordsappen bruker.
-- Viser sidene i grupper, med ikon og forklaring, og lar deg søke.
+- Viser bare sidene du har fått. Ingen ser noe før admin har lagt dem i en
+  gruppe under **Appen** i adminbordet – ansatte og kunder likt. Adminer ser
+  alt.
+- Viser sidene i grupper, med ikon og forklaring, og lar deg søke. Søket bryr
+  seg ikke om store og små bokstaver, og «bjorn» finner Bjørn.
 - **Trykk** på en side for å åpne den. **Hold inne** for å se hva den er til.
 - Listen blir lagret på telefonen, så appen virker også uten dekning. Den henter
   ny liste når du åpner appen igjen.
+- Du blir ikke logget ut når navet er travelt eller nede – bare når
+  innloggingen faktisk er ugyldig. Da vises den lagrede lista.
 
 ## Hvorfor systemene åpner seg i nettleseren
 
