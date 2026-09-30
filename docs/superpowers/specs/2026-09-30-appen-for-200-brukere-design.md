@@ -223,9 +223,12 @@ tilbake-knappen virker og tallet i menyen kan lenke rett til køen. Lista leser
 adressen når den lastes, og skriver den med `history.replaceState` – ingen ny
 rundtur til serveren per tastetrykk. Over lista: «Viser 23 av 187».
 
-**Raden:** navn, statusmerke, gruppene som små merker, «Ukjent» eller «Har
-tilgang andre steder», «N unntak» når det finnes noen, og e-post · telefon ·
-dato. Raden lenker til personsiden. Eier får en avkrysningsboks til venstre,
+**Raden:** navn, statusmerke, gruppene som små merker, «Har tilgang andre
+steder» – eller «Ukjent» for den som venter, som i dag – «N unntak» når det
+finnes noen, og e-post · telefon · dato. «Ukjent» står bare i køen: der er det
+en advarsel før du slipper noen inn. På godkjente kunder, som sjelden finnes i
+de andre systemene, ville det bare vært støy. Filteret «Bare ukjente» gjelder
+alle. Raden lenker til personsiden. Eier får en avkrysningsboks til venstre,
 utenfor lenken.
 
 **Handlinger på flere** (bare eier): kryss av rader, eller «Velg alle N
