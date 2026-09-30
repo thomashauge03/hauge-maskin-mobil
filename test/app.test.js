@@ -88,3 +88,43 @@ test('svarer ikke navet, og vi aldri har visst det, vises ingenting', async () =
   assert.match(tomTekst(w), /Fikk ikke hentet/);
   w.close();
 });
+
+/* Nøklene i lagringen har bruker-id-en (u1) i seg, og id-en leses fra økten.
+   Rydder appen først når økten er borte, tømmer den «ukjend» i stedet, og
+   lista til den som logget ut, blir liggende. */
+const lagretOmU1 = (w) =>
+  Array.from({ length: w.localStorage.length }, (_, i) => w.localStorage.key(i))
+    .filter((k) => k.startsWith('hm-sider-u1'))
+    .sort();
+
+// Slik brukeren gjør det: Om, så Logg ut. Ferdig når porten er tilbake.
+async function loggUt(w) {
+  const d = w.document;
+  d.getElementById('btnOm').click();
+  d.getElementById('omLoggUt').click();
+  for (let i = 0; i < 200 && d.getElementById('port').hidden; i++) {
+    await new Promise((ferdig) => setTimeout(ferdig, 10));
+  }
+}
+
+for (const [hvem, valg, ventet] of [
+  ['en vanlig bruker', { mine: ['utleie'] }, 'Utleie'],
+  ['en admin', { mine: [], alle: true }, 'Utleie,Tripletex,Rørlager']
+]) {
+  test(`utlogging fjerner det som er lagret om ${hvem}, og økten`, async () => {
+    const w = await start(valg);
+    const d = w.document;
+    assert.equal(navn(w), ventet);
+    // Uten disse kunne testen bestått uten at noe noensinne var lagret
+    assert.ok(lagretOmU1(w).length, 'lista ble aldri lagret');
+    assert.ok(w.localStorage.getItem('hm-okt'), 'økten mangler før utlogging');
+    assert.equal(d.getElementById('port').hidden, true);
+
+    await loggUt(w);
+
+    assert.equal(d.getElementById('port').hidden, false, 'porten kom aldri tilbake');
+    assert.deepEqual(lagretOmU1(w), []);
+    assert.equal(w.localStorage.getItem('hm-okt'), null);
+    w.close();
+  });
+}

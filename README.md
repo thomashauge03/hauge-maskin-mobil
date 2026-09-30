@@ -18,7 +18,7 @@ Det er fordi appen ikke ligger i Play Butikk – trykk **Tillat** og fortsett.
 
 Appen sier selv fra når det kommer en ny versjon: du får et rødt felt
 øverst med **Last ned**. Den sjekker `versjon.json` på nettsiden ved hver
-oppstart, og hver gang den kommer fram igjen.
+oppstart, og når den kommer fram igjen, høyst én gang i minuttet.
 
 ### Påbudt oppdatering
 
@@ -60,7 +60,8 @@ Samme adresse fungerer også på Android om du ikke vil installere APK-en.
   seg ikke om store og små bokstaver, og «bjorn» finner Bjørn.
 - **Trykk** på en side for å åpne den. **Hold inne** for å se hva den er til.
 - Listen blir lagret på telefonen, så appen virker også uten dekning. Den henter
-  ny liste når du åpner appen igjen.
+  ny liste når du åpner appen, og når den kommer fram igjen, høyst én gang i
+  minuttet.
 - Du blir ikke logget ut når navet er travelt eller nede – bare når
   innloggingen faktisk er ugyldig. Da vises den lagrede lista.
 

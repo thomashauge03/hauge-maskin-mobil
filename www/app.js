@@ -908,8 +908,11 @@ async function loggUtOgTilbake() {
      skal bort selv om navet ikke svarer på utloggingen. */
   await window.HM_NOKKEL.fjern();
   await window.HM_NOKKEL.glemForsok();
-  await window.HM_NAV.loggUt();
+  /* Før utloggingen, ikke etter: lagringsnøklene har bruker-id-en i seg, og
+     den leses fra økten. Er økten borte, tømmer vi «ukjend» i stedet, og
+     lista til den som logget ut, blir liggende. */
   tomLokalt();
+  await window.HM_NAV.loggUt();
   meg = null;
   mittEpost = null;
   alleSider = false;
