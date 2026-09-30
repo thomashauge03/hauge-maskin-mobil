@@ -103,6 +103,17 @@ async function navKall(sti, { metode = 'POST', kropp, token } = {}) {
   return { ok: res.ok, status: res.status, json };
 }
 
+/* Hvilke svar på en fornying betyr at innloggingen faktisk er ugyldig?
+   4xx – men ikke 408 (tidsavbrudd) og 429 (for mange på én gang). Alt annet
+   er navet som er travelt eller nede, og da skal ingen kastes ut.
+   Supabase tåler 30 fornyinger på rad fra samme IP-adresse; et kontor på
+   samme wifi klokka sju kan bruke dem opp. Før ble alle som kom etter
+   logget ut – og innloggingen de prøvde etterpå, gikk mot den samme tomme
+   bøtta. */
+function erUgyldig(status) {
+  return status >= 400 && status < 500 && status !== 408 && status !== 429;
+}
+
 /* Fornying må skje én om gangen.
    Appen henter sidelisten og statusen sin i samme runde. Er tokenet utgått,
    kommer begge tilbake som 401, og to fornyinger med samme token gjør at den
@@ -110,24 +121,34 @@ async function navKall(sti, { metode = 'POST', kropp, token } = {}) {
    ut av at appen spurte om to ting samtidig. */
 let fornyar = null;
 
+/* { okt } når det gikk. { okt: null, ugyldig: true } når innloggingen er
+   ugyldig. { okt: null, ugyldig: false } når navet ikke svarte. */
 async function fornyOkt() {
   if (fornyar) return fornyar;
 
   fornyar = (async () => {
     const okt = lesOkt();
-    if (!okt) return null;
+    if (!okt) return { okt: null, ugyldig: true };
 
-    const { ok, json } = await navKall('/auth/v1/token?grant_type=refresh_token', {
-      kropp: { refresh_token: okt.refresh_token }
-    });
-
-    if (!ok || !json || !json.access_token) {
-      // Tokenet er ugyldig – brukeren er slettet, sperret i innloggingen, eller
-      // har vært borte for lenge. Da må man logge inn på nytt.
-      tomOkt();
-      return null;
+    let svar;
+    try {
+      svar = await navKall('/auth/v1/token?grant_type=refresh_token', {
+        kropp: { refresh_token: okt.refresh_token }
+      });
+    } catch {
+      return { okt: null, ugyldig: false };
     }
-    return skrivOkt(json);
+
+    if (svar.ok && svar.json && svar.json.access_token) {
+      return { okt: skrivOkt(svar.json), ugyldig: false };
+    }
+    if (erUgyldig(svar.status)) {
+      // Brukeren er slettet, sperret i innloggingen, eller har vært borte for
+      // lenge. Da må man logge inn på nytt.
+      tomOkt();
+      return { okt: null, ugyldig: true };
+    }
+    return { okt: null, ugyldig: false };
   })();
 
   try {
@@ -137,29 +158,37 @@ async function fornyOkt() {
   }
 }
 
-/* Gyldig token, eller null. Fornyer litt før utløp, så et kall som er
-   underveis ikke blir avvist midt i. */
-async function gyldigToken() {
-  const okt = lesOkt();
-  if (!okt) return null;
-  if (okt.access_token && okt.gaar_ut - Date.now() > 60_000) return okt.access_token;
-  const ny = await fornyOkt();
-  return ny ? ny.access_token : null;
-}
+const UTLOGGA = { ok: false, status: 401, json: null };
+const UTAN_KONTAKT = { ok: false, status: 0, json: null };
 
-/* Kall som krever innlogging. Blir tokenet avvist likevel, prøver vi én
-   fornying før vi gir opp – tiden på telefonen kan være feil. */
+/* Kall som krever innlogging.
+   Fornyer litt før utløp, så et kall som er underveis ikke blir avvist midt
+   i. Blir tokenet avvist likevel, prøver vi én fornying før vi gir opp –
+   tiden på telefonen kan være feil. Uten nett er svaret «ikke kontakt», aldri
+   et unntak: den som kaller, skal vise det den har. Før kastet et kall uten
+   nett, og appen ble stående på lasteskjermen. */
 async function medInnlogging(sti, { metode = 'GET', kropp } = {}) {
-  let token = await gyldigToken();
-  if (!token) return { ok: false, status: 401, json: null };
+  const okt = lesOkt();
+  if (!okt) return UTLOGGA;
 
-  let svar = await navKall(sti, { metode, kropp, token });
-  if (svar.status === 401) {
-    const ny = await fornyOkt();
-    if (!ny) return { ok: false, status: 401, json: null };
-    svar = await navKall(sti, { metode, kropp, token: ny.access_token });
+  try {
+    let token = okt.access_token;
+    if (!token || okt.gaar_ut - Date.now() <= 60_000) {
+      const ny = await fornyOkt();
+      if (!ny.okt) return ny.ugyldig ? UTLOGGA : UTAN_KONTAKT;
+      token = ny.okt.access_token;
+    }
+
+    let svar = await navKall(sti, { metode, kropp, token });
+    if (svar.status === 401) {
+      const ny = await fornyOkt();
+      if (!ny.okt) return ny.ugyldig ? UTLOGGA : UTAN_KONTAKT;
+      svar = await navKall(sti, { metode, kropp, token: ny.okt.access_token });
+    }
+    return svar;
+  } catch {
+    return UTAN_KONTAKT;
   }
-  return svar;
 }
 
 /* ---------- Registrering ---------- */
@@ -214,7 +243,7 @@ async function loggUt() {
    skje, og da står kontoen fast til noen fjerner den i adminbordet. */
 async function minStatus() {
   const { ok, status, json } = await medInnlogging(
-    '/rest/v1/min_status?select=status,navn,epost'
+    '/rest/v1/min_status?select=status,navn,epost,alle_sider'
   );
 
   if (status === 401) return { tilstand: 'utlogga' };
@@ -222,31 +251,25 @@ async function minStatus() {
   if (!Array.isArray(json) || json.length === 0) return { tilstand: 'utanPerson' };
 
   const rad = json[0];
-  // E-posten blir med, så nøkkelen i Om-arket kan foreslå den
-  const hvem = { navn: rad.navn, epost: rad.epost || null };
+  // E-posten blir med, så nøkkelen i Om-arket kan foreslå den. alle: adminer
+  // ser hele lista – de kan ikke legges i en gruppe uten en personrad.
+  const hvem = { navn: rad.navn, epost: rad.epost || null, alle: rad.alle_sider === true };
   if (rad.status === 'godkjent') return { tilstand: 'godkjent', ...hvem };
   if (rad.status === 'sperra') return { tilstand: 'sperra', ...hvem };
   return { tilstand: 'ventar', ...hvem };
 }
 
-/* ---------- Hvilke sider er mine? ----------
-   Appen har sidelista fra sider.json allerede, og den lista er den samme for
-   alle. Det eneste navet trenger å svare på er hvor JEG avviker fra den.
+/* ---------- Hvilke sider ser jeg? ----------
+   Svaret er sidene jeg SER. En side som ikke er nevnt, er ikke min – en ny
+   side ingen har gitt meg, skal ikke dukke opp av seg selv. Se migrasjon
+   0017 i adminbordet.
 
-   Én rad per side som er annerledes for meg:
-     syn = false  →  skjul denne
-     syn = true   →  vis den likevel
-   En side som ikke er nevnt er standard, og skal vises.
-
-   At sidene ikke ligger i navet er med vilje: sider.json er fortsatt fasit,
-   og skrivebordsappen er fortsatt stedet man redigerer dem. Se migrasjon
-   0015 for hvorfor. */
-async function mineSideval() {
-  const { ok, json } = await medInnlogging('/rest/v1/mine_sideval?select=side_id,syn');
-  // null betyr «fikk ikke svar», ikke «ingen avvik». Den som kaller må
-  // skille dem – ellers ville et nettverksglipp sett ut som full tilgang.
+   null betyr «fikk ikke svar». Den som kaller må da bruke det den visste
+   sist – aldri vise hele lista. */
+async function mineSider() {
+  const { ok, json } = await medInnlogging('/rest/v1/mine_sider?select=side_id');
   if (!ok || !Array.isArray(json)) return null;
-  return json;
+  return json.map((r) => String(r.side_id));
 }
 
 window.HM_NAV = {
@@ -254,7 +277,7 @@ window.HM_NAV = {
   loggInn,
   loggUt,
   minStatus,
-  mineSideval,
+  mineSider,
   brukarId,
   erInnlogga,
   medInnlogging
