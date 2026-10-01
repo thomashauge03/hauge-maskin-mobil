@@ -13,7 +13,8 @@ const UTGAATT = { access_token: 'gammel', refresh_token: 'r1', gaar_ut: 0, bruka
 const GYLDIG = () => ({ access_token: 'a', refresh_token: 'r', gaar_ut: Date.now() + 3600e3, brukar_id: 'u1' });
 
 /* www/nav.js er et vanlig nettleserskript. Vi gir det lagring og et nett vi
-   styrer selv: `svar` bestemmer hva hver adresse svarer. */
+   styrer selv: `svar` bestemmer hva hver adresse svarer. Det kan også vente
+   (async), så et svar kan komme etter at noe annet har skjedd. */
 function last(svar, okt = UTGAATT) {
   const lager = new Map();
   if (okt) lager.set('hm-okt', JSON.stringify(okt));
@@ -25,7 +26,7 @@ function last(svar, okt = UTGAATT) {
   const kall = [];
   const fetch = async (url) => {
     kall.push(String(url));
-    const s = svar(String(url));
+    const s = await svar(String(url));
     if (s instanceof Error) throw s;
     return { ok: s.status >= 200 && s.status < 300, status: s.status, json: async () => s.json ?? null };
   };
@@ -87,4 +88,45 @@ test('to kall med utgått token gir én fornying, ikke to', async () => {
   const { nav, kall } = last((url) => (erFornying(url) ? NY_OKT : { status: 200, json: [] }));
   await Promise.all([nav.minStatus(), nav.mineSider()]);
   assert.equal(kall.filter(erFornying).length, 1);
+});
+
+/* Fornyingen går mot nettet, og svaret kan komme etter at brukeren har logget
+   ut – eller etter at en annen har logget inn på samme telefon. */
+test('en fornying som svarer etter utlogging, setter ikke økten tilbake', async () => {
+  let slipp;
+  const sperre = new Promise((ferdig) => { slipp = ferdig; });
+  const { nav, lager } = last(async (url) => {
+    if (erFornying(url)) { await sperre; return NY_OKT; }
+    return { status: 200, json: [] };
+  });
+
+  const status = nav.minStatus(); // utgått token: fornyingen starter og blir hengende
+  await nav.loggUt();
+  assert.ok(!lager.has('hm-okt'), 'utloggingen tok ikke økten');
+
+  slipp();
+  await status;
+
+  assert.ok(!lager.has('hm-okt'), 'fornyingen la økten tilbake, og neste oppstart logger den forrige inn igjen');
+});
+
+test('en avvist fornying som svarer etter at en annen har logget inn, kaster ikke ut den nye', async () => {
+  let slipp;
+  const sperre = new Promise((ferdig) => { slipp = ferdig; });
+  const { nav, lager } = last(async (url) => {
+    if (erFornying(url)) {
+      await sperre;
+      return { status: 400, json: { error_code: 'refresh_token_not_found' } };
+    }
+    return { status: 200, json: [] };
+  });
+
+  const status = nav.minStatus();
+  lager.set('hm-okt', JSON.stringify({ ...GYLDIG(), refresh_token: 'r-ny', brukar_id: 'u2' }));
+
+  slipp();
+  await status;
+
+  assert.ok(lager.has('hm-okt'), 'den nye innloggingen ble kastet ut');
+  assert.equal(JSON.parse(lager.get('hm-okt')).brukar_id, 'u2');
 });

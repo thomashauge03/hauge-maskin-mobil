@@ -139,6 +139,14 @@ async function fornyOkt() {
       return { okt: null, ugyldig: false };
     }
 
+    /* Svaret kan komme etter at noen logget ut, eller logget inn som en
+       annen. Da er ikke økten vår lenger. Skrev vi det nye tokenet likevel,
+       ville den som logget ut blitt logget inn igjen ved neste oppstart – på
+       en delt telefon er det neste person som får se lista – og et avslag
+       ville kastet ut den som nettopp logget inn. */
+    const naa = lesOkt();
+    if (!naa || naa.refresh_token !== okt.refresh_token) return { okt: null, ugyldig: false };
+
     if (svar.ok && svar.json && svar.json.access_token) {
       return { okt: skrivOkt(svar.json), ugyldig: false };
     }
