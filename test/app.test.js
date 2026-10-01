@@ -484,13 +484,67 @@ test('sidelista kommer ikke, og en annen logger inn mens navet svarer: ingenting
 
   w.localStorage.setItem('hm-okt', OKT('u2')); // en annen logger inn mens svaret er underveis
   slipp();
-  await vent(100);
+  await til(() => !w.document.getElementById('btnOppdater').classList.contains('gaar'), 'at hentingen er ferdig');
 
   assert.deepEqual(
     hmSider(w).filter((k) => k.startsWith('hm-sider-u2')),
     [],
     'lista til den forrige ble lagret for den nye'
   );
+});
+
+/* To hentinger kan overlappe: oppstarten venter på navet, og brukeren
+   trykker Oppdater. Den eldste skal ikke legge seg over den nyeste. */
+test('en eldre henting som blir ferdig sist, legger seg ikke over en nyere', async (t) => {
+  let sidelister = 0;
+  let mineKall = 0;
+  let slipp;
+  const sperre = new Promise((ferdig) => { slipp = ferdig; });
+  const gammel = [{ id: 'utleie', name: 'Utleie (gammelt navn)', url: 'https://utleie.example/', group: 'Kunder' }];
+  const { w } = lag({
+    lager: { ...lagretFor(['utleie']), 'hm-sider-u1': JSON.stringify(gammel) },
+    nett: async (u) => {
+      if (u.includes('sider.json')) return ++sidelister === 1 ? { status: 503 } : { status: 200, json: SIDER };
+      if (u.includes('/rest/v1/mine_sider')) {
+        if (++mineKall === 1) await sperre; // oppstarten venter på navet
+        return { status: 200, json: [{ side_id: 'utleie' }] };
+      }
+      return vanligNett()(u);
+    }
+  }, t);
+  const d = w.document;
+  await til(() => mineKall === 1 && sidelister === 1, 'at oppstarten venter på navet');
+
+  d.getElementById('btnOppdater').click();
+  await til(() => !d.getElementById('btnOppdater').classList.contains('gaar'), 'at Oppdater er ferdig');
+  assert.equal(navn(w), 'Utleie');
+
+  slipp(); // oppstarten blir ferdig sist
+  await vent(50);
+
+  assert.equal(JSON.parse(w.localStorage.getItem('hm-sider-u1'))[0].name, 'Utleie', 'den gamle lista ble lagret over den nye');
+  assert.equal(navn(w), 'Utleie');
+  assert.match(d.getElementById('status').textContent, /hentet/);
+});
+
+/* Uten nett, eller med en sidelista som henger, skal svaret fra navet ikke
+   komme i tillegg til ventetiden på sidelista. */
+test('navet spørres samtidig med sidelista, ikke etter', async (t) => {
+  let slippSider;
+  const sperre = new Promise((ferdig) => { slippSider = ferdig; });
+  const vanlig = vanligNett({ mine: ['utleie'] });
+  const { w, kall } = lag({
+    lager: { 'hm-okt': OKT() },
+    nett: async (u) => {
+      if (u.includes('sider.json')) { await sperre; return { status: 200, json: SIDER }; }
+      return vanlig(u);
+    }
+  }, t);
+  await til(() => antallKall(kall, 'sider.json') === 1, 'at sidelista er bedt om');
+  await til(() => antallKall(kall, '/rest/v1/mine_sider') === 1, 'at navet er spurt mens sidelista venter');
+
+  slippSider();
+  await til(() => navn(w) === 'Utleie', 'lista');
 });
 
 test('en henting som feiler, havner i konsollen', async (t) => {
@@ -583,6 +637,25 @@ test('venter på godkjenning: tilbake i appen slipper inn med en gang, også inn
   w.document.dispatchEvent(new w.Event('visibilitychange'));
 
   await til(() => portDel(w) === null && navn(w) === 'Utleie', 'lista');
+});
+
+test('venter på godkjenning, og over et minutt siden sist: porten sjekkes én gang, ikke to', async (t) => {
+  const vanlig = vanligNett();
+  const { w, kall, klokke } = lag({
+    lager: { 'hm-okt': OKT() },
+    nett: async (u) => (u.includes('/rest/v1/min_status')
+      ? { status: 200, json: [{ status: 'venter', navn: 'Ola', epost: 'ola@hm.no', alle_sider: false }] }
+      : vanlig(u))
+  }, t);
+  await til(() => portDel(w) === 'portVent', 'venteskjermen');
+  const foer = antallKall(kall, '/rest/v1/min_status');
+
+  klokke.fram = 61_000;
+  w.document.dispatchEvent(new w.Event('visibilitychange'));
+  await til(() => antallKall(kall, '/rest/v1/min_status') > foer && portDel(w) === 'portVent', 'en ny sjekk');
+  await vent(50);
+
+  assert.equal(antallKall(kall, '/rest/v1/min_status'), foer + 1);
 });
 
 /* Bare venteskjermen går forbi grensa. Sjekket appen porten hver gang,
@@ -706,6 +779,64 @@ test('utlogging tømmer søket, så neste bruker ikke får lista filtrert av det
   assert.equal(d.getElementById('sok').value, '');
   assert.equal(d.getElementById('sokefelt').hidden, true);
   assert.equal(d.getElementById('btnSok').getAttribute('aria-expanded'), 'false');
+});
+
+/* Utloggingen venter på navet. En henting som blir ferdig imens, ser
+   fortsatt den forrige som innlogget, og legger sidene hans i minnet.
+   Feilet så den nye brukerens første henting, kunne hun søke dem fram – og
+   åpne dem. */
+test('en henting som blir ferdig under utloggingen, gir ikke neste bruker sidene til den forrige', async (t) => {
+  let holdMine = false;
+  let slippMine;
+  const mineSperre = new Promise((ferdig) => { slippMine = ferdig; });
+  let slippUt;
+  const utSperre = new Promise((ferdig) => { slippUt = ferdig; });
+  let kari = false;
+  const vanlig = vanligNett();
+  const { w, kall } = lag({
+    lager: lagretFor(['utleie', 'tripletex']),
+    nett: async (u) => {
+      if (u.includes('sider.json')) return { status: 503 };
+      if (u.includes('/auth/v1/logout')) { await utSperre; return { status: 204 }; }
+      if (u.includes('grant_type=password')) {
+        kari = true;
+        return { status: 200, json: { access_token: 'a2', refresh_token: 'r2', expires_in: 3600, user: { id: 'u2' } } };
+      }
+      if (u.includes('/rest/v1/mine_sider')) {
+        if (kari) return { status: 500 }; // navet svarer ikke Kari
+        if (holdMine) await mineSperre;
+        return { status: 200, json: [{ side_id: 'utleie' }, { side_id: 'tripletex' }] };
+      }
+      return vanlig(u);
+    }
+  }, t);
+  const d = w.document;
+  const knapp = d.getElementById('btnOppdater');
+  await til(() => navn(w) === 'Utleie,Tripletex' && antallKall(kall, '/rest/v1/mine_sider') === 1, 'lista til Ola');
+
+  holdMine = true;
+  knapp.click(); // en henting som blir hengende hos navet
+  await til(() => antallKall(kall, '/rest/v1/mine_sider') === 2, 'at hentingen venter på navet');
+  d.getElementById('btnOm').click();
+  d.getElementById('omLoggUt').click(); // utloggingen venter også på navet
+  await til(() => antallKall(kall, '/auth/v1/logout') === 1, 'at utloggingen er underveis');
+
+  slippMine(); // hentingen blir ferdig mens Ola fortsatt står som innlogget
+  await til(() => !knapp.classList.contains('gaar'), 'at hentingen er ferdig');
+  slippUt();
+  await til(() => portDel(w) === 'portLogin', 'innloggingsskjermen');
+
+  // Kari logger inn på samme telefon, og hennes første henting feiler
+  d.getElementById('loginEpost').value = 'kari@hm.no';
+  d.getElementById('loginPassord').value = 'hemmelig';
+  d.getElementById('skjemaLogin').dispatchEvent(new w.Event('submit', { cancelable: true }));
+  await til(() => portDel(w) === null && /Fikk ikke hentet/.test(tomTekst(w)), 'at Kari er inne, uten liste');
+
+  d.getElementById('btnSok').click();
+  d.getElementById('sok').value = 't';
+  d.getElementById('sok').dispatchEvent(new w.Event('input'));
+
+  assert.equal(navn(w), '', 'Kari fant sidene til Ola i søket');
 });
 
 test('utlogging tømmer statuslinja, så neste bruker ikke ser tallet og tida til den forrige', async (t) => {

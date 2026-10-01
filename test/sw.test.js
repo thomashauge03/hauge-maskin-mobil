@@ -82,3 +82,29 @@ test('reservekopien av sidelista er lagret før servicearbeideren slipper', asyn
   await Promise.all(iLive);
   assert.ok(lagret, 'servicearbeideren slapp før kopien var lagret');
 });
+
+/* Et svar fra nettet som kom fram, skal aldri byttes ut med den gamle kopien
+   – eller med ingenting, som siden ser som at nettet er borte – fordi
+   lagringen av kopien gikk galt. */
+test('svaret fra nettet går fram selv om waitUntil kaster', async () => {
+  const behandlere = {};
+  const self = {
+    addEventListener: (type, fn) => { behandlere[type] = fn; },
+    location: { origin: 'https://thomashauge03.github.io' }
+  };
+  const caches = {
+    open: async () => ({ put: async () => {} }),
+    match: async () => 'den gamle kopien'
+  };
+  const nettsvar = { ok: true, clone: () => ({}) };
+  vm.runInNewContext(KODE, { self, caches, fetch: async () => nettsvar, Request: class {}, URL });
+
+  let svar;
+  behandlere.fetch({
+    request: { url: 'https://raw.githubusercontent.com/thomashauge03/hauge-maskin-app/main/sider.json' },
+    respondWith: (p) => { svar = p; },
+    waitUntil: () => { throw new Error('InvalidStateError'); }
+  });
+
+  assert.equal(await svar, nettsvar);
+});

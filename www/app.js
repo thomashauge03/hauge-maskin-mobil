@@ -125,15 +125,31 @@ function tomLokalt() {
   sider = [];
 }
 
+/* Et eldre svar skal ikke legge seg over et nyere. To hentinger kan
+   overlappe – oppstarten venter på navet, og brukeren trykker Oppdater – og
+   den eldste kan bli ferdig sist. */
+let hentinger = 0;
+let sistTegnet = 0;
+
+function nyesteSvar(nr) {
+  if (nr < sistTegnet) return false;
+  sistTegnet = nr;
+  return true;
+}
+
 /* ---------- Hent lista ----------
    fersk: Oppdater-knappen. Går forbi GitHubs mellomlager, som ellers kan
    holde på en endret fil i opptil fem minutter. */
 async function hentSider({ stille = false, fersk = false } = {}) {
   // Hvem henter vi for? Svaret skal bare brukes for den samme
   const uid = window.HM_NAV.brukarId();
+  const nr = ++hentinger;
   const knapp = $('btnOppdater');
   if (!stille) knapp.classList.add('gaar');
-  // Svaret fra navet. undefined: ikke spurt ennå. null: spurt, men uten svar.
+  /* Navet spørres samtidig med sidelista, ikke etter. Henger sidelista, skal
+     ikke ventetiden på navet komme i tillegg. mineSider kaster aldri. */
+  const fraNavet = window.HM_NAV.mineSider();
+  // Svaret fra navet. undefined: ikke ventet på ennå. null: uten svar.
   let ferske;
   try {
     /* Automatisk henting spør med fast adresse, og nettleseren sender selv
@@ -151,8 +167,9 @@ async function hentSider({ stille = false, fersk = false } = {}) {
        fortsatt fersk – navn, adresser og grupper er oppdaterte – og tilgangen
        er den fra forrige gang. Har vi aldri visst det, vises den lagrede
        lista som den var. Aldri hele lista. */
-    ferske = await window.HM_NAV.mineSider();
+    ferske = await fraNavet;
     if (await bytteUnderveis(uid)) return false;
+    if (!nyesteSvar(nr)) return false;
 
     const mine = ferske === null ? lesMine() : ferske;
     /* En admin ser alle sidene, og bareMine ser bort fra lista over hvilke som
@@ -184,8 +201,9 @@ async function hentSider({ stille = false, fersk = false } = {}) {
          av en gruppe, skal ikke beholde sidene til sider.json kommer igjen.
          bareMine kan bare ta bort: den lagrede lista har ingen side vi ikke
          allerede hadde fått. */
-      if (ferske === undefined) ferske = await window.HM_NAV.mineSider();
+      if (ferske === undefined) ferske = await fraNavet;
       if (await bytteUnderveis(uid)) return false;
+      if (!nyesteSvar(nr)) return false;
       sider = ferske ? bareMine(lagra, ferske, alleSider) : lagra;
       if (ferske) {
         skrivMine(ferske);
@@ -193,7 +211,7 @@ async function hentSider({ stille = false, fersk = false } = {}) {
       }
       teikn();
       visStatus('Ikke kontakt – viser lagret liste');
-    } else {
+    } else if (nyesteSvar(nr)) {
       visTomt('Fikk ikke hentet sidene. Sjekk at du har nett.', true);
     }
     return false;
@@ -986,8 +1004,12 @@ async function loggUtOgTilbake() {
   await window.HM_NAV.loggUt();
   /* Så alt som er igjen, nå som ingen er innlogget. En henting som svarte
      mens utloggingen pågikk, har kunnet skrive lista tilbake under samme
-     nøkkel. */
+     nøkkel – og i minnet og på skjermen, for den så fortsatt den forrige som
+     innlogget. Feilet neste brukers første henting, kunne hun ellers søkt
+     fram sidene hans, og åpnet dem. */
   ryddAndresLister();
+  sider = [];
+  $('liste').innerHTML = '';
   meg = null;
   mittEpost = null;
   alleSider = false;

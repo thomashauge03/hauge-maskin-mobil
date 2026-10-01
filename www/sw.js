@@ -58,14 +58,19 @@ self.addEventListener('fetch', (e) => {
        skal ikke bli reservekopien.
 
        waitUntil: når svaret er levert, kan nettleseren stoppe
-       servicearbeideren når den vil, og lagringen ville da blitt avbrutt. */
+       servicearbeideren når den vil, og lagringen ville da blitt avbrutt.
+       Kaster den likevel, skal svaret fra nettet gå fram – ikke byttes ut
+       med den gamle kopien, eller med ingenting, i .catch under. */
     const nokkel = url.origin + url.pathname;
     e.respondWith(
       fetch(e.request)
         .then((res) => {
           if (res.ok) {
             const kopi = res.clone();
-            e.waitUntil(caches.open(CACHE).then((c) => c.put(nokkel, kopi)));
+            const lagring = caches.open(CACHE).then((c) => c.put(nokkel, kopi));
+            try {
+              e.waitUntil(lagring);
+            } catch { /* lagringen går likevel, bare uten å holde oss i live */ }
           }
           return res;
         })

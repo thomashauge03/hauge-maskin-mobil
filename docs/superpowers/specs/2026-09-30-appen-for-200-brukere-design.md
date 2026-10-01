@@ -377,7 +377,9 @@ gir `utanNett` i stedet for `utlogga` når navet ikke svarer.
 ### Søket i appen
 
 Samme normalisering som i adminbordet (en kopi, fordi repoene ikke deler
-kode – begge er testet). Søker i navn, adresse, gruppe og forklaring.
+kode – begge er testet). Søker i navn, gruppe og forklaring. Adressen ble
+tatt ut 01.10.2026: «https», «app» og «vercel» står i nesten alle, og ga
+hele lista.
 
 ### Versjon
 
