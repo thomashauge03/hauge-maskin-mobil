@@ -25,7 +25,13 @@ const SKALET = [
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SKALET)).then(() => self.skipWaiting()));
+  /* cache: 'reload' går forbi nettleserens egen mellomlager. addAll går ellers
+     gjennom den, og GitHub Pages lar nettleseren holde en fil i ti minutter
+     (max-age=600). Rett etter et slipp kan den nye servicearbeideren da lagre
+     forrige utgave av app.js under det nye navnet, og alle med appen på
+     hjem-skjermen kjører gammel kode helt til neste navnebytte. */
+  const friske = SKALET.map((u) => new Request(u, { cache: 'reload' }));
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(friske)).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {
