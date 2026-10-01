@@ -46,7 +46,7 @@ max-age=300`, `Access-Control-Allow-Origin: *`. En betinget forespørsel med
 |---|---|---|
 | Ingen ser noe før de er i en gruppe – ansatte og kunder likt | Standardsider for alle, og kunder som egen type | Eiers beslutning. Appen samler lenker; eier legger folk i grupper selv. En ny side blir aldri synlig for noen av seg selv. |
 | Alle starter tomt, ingen overgangsgruppe | Gruppa «Ansatte» med dagens standardsider og alle godkjente i den | Eiers beslutning. [Rekkefølgen](#rekkefølge) gir likevel eier tid til å lage gruppene før telefonene bytter regel. |
-| Aktive adminer ser alle sidene i appen | Adminer som vanlige personer | En admin uten `personer`-rad kan ikke legges i en gruppe, og ville fått tom app. Den som styrer systemene skal kunne åpne dem – samme begrunnelse som migrasjon 0014. |
+| Adminer følger gruppene, som alle andre (endret 01.10.2026, migrasjon 0018) | Aktive adminer ser alle sidene, slik 0017 gjorde | Eiers beslutning etter slippet: eier la seg i «Vanlig ansatt» og så likevel alt. En admin uten `personer`-rad slipper inn (0014), men ser ingenting før kontoen har en personrad. |
 | Søk og filter i nettleseren, over en slank liste | Søk på serveren med sideveksling | ≈ 200 byte per person: 1000 personer er 200 KB, og å filtrere dem tar under et millisekund. Serversøk gir en rundtur per tastetrykk og mer kode, for en skala dette ikke når. |
 | Registreringen i appen er uendret | «Ansatt/kunde» i skjemaet | Eiers beslutning: likt for alle. |
 | `mine_sideval` står urørt | Skrive den om til ny regel | Appversjon 1.7–1.14 bruker den. Uten sidelista i databasen kan den ikke uttrykke «skjul alt som ikke er gitt». `minimum` 1.17.0 tvinger alt fra 1.15 over. Sidelista er offentlig på GitHub, så ingen hemmelighet lekker. |
@@ -132,6 +132,9 @@ exists (
 ```
 
 Den settes på begge leddene i visningen (personraden og admin-reserveveien fra 0014).
+
+> Endret 01.10.2026 i migrasjon 0018: `alle_sider` er alltid false. Adminer
+> følger gruppene. Kolonnen står igjen fordi appen ber om den.
 
 ### Rettigheter og indekser
 
@@ -423,7 +426,7 @@ APK-slippet spør eier først, som alltid.
 **Migrasjonen** mot en ekte Postgres i Docker, med en liten stand-in for
 Supabase sin `auth` (`auth.users` og `auth.uid()` fra en innstilling). Samme
 tilfeller som `serSiden`, pluss: venter og sperra i en gruppe gir null rader,
-`alle_sider` er sann bare for aktive adminer, og `anon` får ingenting.
+`alle_sider` er sann bare for aktive adminer (fra 0018: aldri), og `anon` får ingenting.
 
 **Mobilappen** (`npm test`): `bareMine`, hvilke svar som logger ut, søket, og
 at `sidelista.js` ellers oppfører seg som før.

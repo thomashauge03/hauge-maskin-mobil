@@ -54,8 +54,7 @@ Samme adresse fungerer også på Android om du ikke vil installere APK-en.
   [hauge-maskin-app](https://github.com/thomashauge03/hauge-maskin-app) – samme
   fil som skrivebordsappen bruker.
 - Viser bare sidene du har fått. Ingen ser noe før admin har lagt dem i en
-  gruppe under **Appen** i adminbordet – ansatte og kunder likt. Adminer ser
-  alt.
+  gruppe under **Appen** i adminbordet – ansatte, kunder og adminer likt.
 - Viser sidene i grupper, med ikon og forklaring, og lar deg søke. Søket bryr
   seg ikke om store og små bokstaver, og «bjorn» finner Bjørn.
 - **Trykk** på en side for å åpne den. **Hold inne** for å se hva den er til.
