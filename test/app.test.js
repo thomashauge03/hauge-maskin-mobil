@@ -87,6 +87,10 @@ function lag({ nett, lager = {}, film = false }, t) {
   };
   w.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
 
+  // Advarslene appen skriver, i stedet for i testutskriften
+  const advarsler = [];
+  w.console.warn = (...deler) => { advarsler.push(deler.map(String).join(' ')); };
+
   const bakgrunn = { startet: 0 };
   if (film) {
     w.HM_LASTAR = {
@@ -96,7 +100,7 @@ function lag({ nett, lager = {}, film = false }, t) {
   }
 
   for (const kode of SKRIPT) w.eval(kode);
-  return { w, kall, klokke, bakgrunn };
+  return { w, kall, klokke, bakgrunn, advarsler };
 }
 
 async function ventPaaListe(w) {
@@ -428,6 +432,78 @@ test('navet svarer ikke, og tilgangen er kjent fra sist: den ferske lista filtre
   assert.equal(JSON.parse(w.localStorage.getItem('hm-sider-u1'))[0].name, 'Utleie (gammelt navn)');
 });
 
+/* ---------- Sidelista kommer ikke, men navet svarer ----------
+   GitHub kan være nede mens navet er oppe. Den lagrede lista vises da, men
+   den som er tatt ut av en gruppe, skal ikke beholde sidene til sider.json
+   kommer igjen. */
+
+const lagretFor = (mine) => ({
+  'hm-okt': OKT(),
+  'hm-sider-u1': JSON.stringify(SIDER.pages.slice(0, 2)), // Utleie og Tripletex
+  'hm-sider-u1-mine': JSON.stringify(mine),
+  'hm-sider-u1-tid': '2026-09-30T08:00:00.000Z'
+});
+
+test('sidelista kommer ikke, men navet svarer: siden som er tatt bort, forsvinner med en gang', async (t) => {
+  const vanlig = vanligNett({ mine: ['utleie'] }); // Tripletex er tatt bort siden sist
+  const { w } = lag({
+    lager: lagretFor(['utleie', 'tripletex']),
+    nett: async (u) => (u.includes('sider.json') ? { status: 503 } : vanlig(u))
+  }, t);
+
+  await til(() => navn(w) === 'Utleie', 'lista uten siden som er tatt bort');
+  assert.equal(w.document.getElementById('status').textContent, 'Ikke kontakt – viser lagret liste');
+  // Neste oppstart uten nett skal heller ikke vise den
+  assert.deepEqual(JSON.parse(w.localStorage.getItem('hm-sider-u1')).map((s) => s.id), ['utleie']);
+  assert.deepEqual(JSON.parse(w.localStorage.getItem('hm-sider-u1-mine')), ['utleie']);
+  // Sidelista ble ikke hentet, så tida for siste henting står
+  assert.equal(w.localStorage.getItem('hm-sider-u1-tid'), '2026-09-30T08:00:00.000Z');
+});
+
+test('sidelista kommer ikke, og en annen logger inn mens navet svarer: ingenting lagres for den nye', async (t) => {
+  let hold = false;
+  let slipp;
+  const sperre = new Promise((ferdig) => { slipp = ferdig; });
+  const vanlig = vanligNett({ mine: ['utleie'] });
+  const { w, kall } = lag({
+    lager: lagretFor(['utleie', 'tripletex']),
+    nett: async (u) => {
+      if (u.includes('sider.json')) return { status: 503 };
+      if (hold && u.includes('/rest/v1/mine_sider')) {
+        await sperre;
+        return { status: 200, json: [{ side_id: 'utleie' }] };
+      }
+      return vanlig(u);
+    }
+  }, t);
+  await til(() => navn(w) === 'Utleie', 'lista uten siden som er tatt bort');
+
+  hold = true;
+  w.document.getElementById('btnOppdater').click();
+  await til(() => antallKall(kall, '/rest/v1/mine_sider') === 2, 'at navet blir spurt');
+
+  w.localStorage.setItem('hm-okt', OKT('u2')); // en annen logger inn mens svaret er underveis
+  slipp();
+  await vent(100);
+
+  assert.deepEqual(
+    hmSider(w).filter((k) => k.startsWith('hm-sider-u2')),
+    [],
+    'lista til den forrige ble lagret for den nye'
+  );
+});
+
+test('en henting som feiler, havner i konsollen', async (t) => {
+  const vanlig = vanligNett({ mine: ['utleie'] });
+  const { w, advarsler } = lag({
+    lager: lagretFor(['utleie']),
+    nett: async (u) => (u.includes('sider.json') ? { status: 503 } : vanlig(u))
+  }, t);
+  await til(() => w.document.getElementById('status').textContent.startsWith('Ikke kontakt'), 'at hentingen har feilet');
+
+  assert.ok(advarsler.some((a) => a.includes('503')), `ingen advarsel med feilen: ${JSON.stringify(advarsler)}`);
+});
+
 test('en admin ser alle sidene selv om navet ikke svarer på mine_sider', async (t) => {
   const { w } = lag({
     nett: vanligNett({ mine: null, alle: true }),
@@ -487,6 +563,42 @@ test('tilbake i appen innen et minutt gir ingen nye kall, etter et minutt ett se
   tilbake();
   await til(() => antallKall(kall, '/rest/v1/mine_sider') === 2, 'at appen henter på nytt etter et minutt');
   assert.equal(antallKall(kall, 'sider.json'), 2);
+});
+
+/* Grensa på et minutt gjelder ikke den som venter på godkjenning. Hun har
+   fått beskjed om at hun er sluppet inn, og går rett tilbake til appen. */
+test('venter på godkjenning: tilbake i appen slipper inn med en gang, også innen et minutt', async (t) => {
+  let godkjent = false;
+  const vanlig = vanligNett({ mine: ['utleie'] });
+  const { w, klokke } = lag({
+    lager: { 'hm-okt': OKT() },
+    nett: async (u) => (u.includes('/rest/v1/min_status')
+      ? { status: 200, json: [{ status: godkjent ? 'godkjent' : 'venter', navn: 'Ola', epost: 'ola@hm.no', alle_sider: false }] }
+      : vanlig(u))
+  }, t);
+  await til(() => portDel(w) === 'portVent', 'venteskjermen');
+
+  godkjent = true;
+  klokke.fram = 5_000;
+  w.document.dispatchEvent(new w.Event('visibilitychange'));
+
+  await til(() => portDel(w) === null && navn(w) === 'Utleie', 'lista');
+});
+
+/* Bare venteskjermen går forbi grensa. Sjekket appen porten hver gang,
+   ville den som er midt i en registrering og henter passordet sitt i en
+   annen app, blitt sendt til innloggingen. */
+test('midt i en registrering: tilbake i appen innen et minutt lar skjemaet stå', async (t) => {
+  const { w, klokke } = lag({ nett: vanligNett() }, t); // ingen økt lagret
+  const d = w.document;
+  await til(() => portDel(w) === 'portLogin', 'innloggingsskjermen');
+  d.getElementById('tilNy').click();
+
+  klokke.fram = 5_000;
+  d.dispatchEvent(new w.Event('visibilitychange'));
+  await vent(50);
+
+  assert.equal(portDel(w), 'portNy');
 });
 
 /* Uten nett ved oppstart bruker appen lista som er lagret. Opprydningen skal
@@ -594,4 +706,16 @@ test('utlogging tømmer søket, så neste bruker ikke får lista filtrert av det
   assert.equal(d.getElementById('sok').value, '');
   assert.equal(d.getElementById('sokefelt').hidden, true);
   assert.equal(d.getElementById('btnSok').getAttribute('aria-expanded'), 'false');
+});
+
+test('utlogging tømmer statuslinja, så neste bruker ikke ser tallet og tida til den forrige', async (t) => {
+  const { w } = lag({ nett: vanligNett({ mine: ['utleie'] }), lager: { 'hm-okt': OKT() } }, t);
+  const status = w.document.getElementById('status');
+  await ventPaaListe(w);
+  // Uten denne kunne testen bestått uten at statuslinja noensinne var skrevet
+  assert.match(status.textContent, /hentet/);
+
+  await loggUt(w);
+
+  assert.equal(status.textContent, '');
 });

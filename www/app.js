@@ -59,10 +59,12 @@ function lesLokalt() {
   }
 }
 
-function skrivLokalt(liste) {
+/* hentet: false når sidelista ikke ble hentet nå, bare snevret inn med det
+   navet sa. Da står tida fra forrige henting. */
+function skrivLokalt(liste, { hentet = true } = {}) {
   try {
     localStorage.setItem(lagerNokkel(), JSON.stringify(liste));
-    localStorage.setItem(lagerTidNokkel(), new Date().toISOString());
+    if (hentet) localStorage.setItem(lagerTidNokkel(), new Date().toISOString());
   } catch { /* full lagring – ikke kritisk */ }
 }
 
@@ -131,6 +133,8 @@ async function hentSider({ stille = false, fersk = false } = {}) {
   const uid = window.HM_NAV.brukarId();
   const knapp = $('btnOppdater');
   if (!stille) knapp.classList.add('gaar');
+  // Svaret fra navet. undefined: ikke spurt ennå. null: spurt, men uten svar.
+  let ferske;
   try {
     /* Automatisk henting spør med fast adresse, og nettleseren sender selv
        med hva den har fra før (If-None-Match). Er fila uendret, svarer GitHub
@@ -147,21 +151,8 @@ async function hentSider({ stille = false, fersk = false } = {}) {
        fortsatt fersk – navn, adresser og grupper er oppdaterte – og tilgangen
        er den fra forrige gang. Har vi aldri visst det, vises den lagrede
        lista som den var. Aldri hele lista. */
-    const ferske = await window.HM_NAV.mineSider();
-
-    /* Økten kan ha skiftet eier mens vi ventet: noen logget ut, eller navet
-       avviste innloggingen (utløpt for lenge siden, slettet eller sperret).
-       Da er dette ikke lenger svaret til den som står på skjermen, og vi må
-       verken tegne det eller lagre det under nøkkelen til en annen.
-
-       Er ingen innlogget lenger, er det innloggingen som skal fram – ikke
-       «Prøv igjen», som aldri kan lykkes. Er appen allerede stengt, kom
-       utloggingen først. Da står innloggingen framme fra før, og en gammel
-       henting skal ikke dra noen tilbake dit midt i en registrering. */
-    if (window.HM_NAV.brukarId() !== uid) {
-      if (!window.HM_NAV.erInnlogga() && appenGaar) await loggUtOgTilbake();
-      return false;
-    }
+    ferske = await window.HM_NAV.mineSider();
+    if (await bytteUnderveis(uid)) return false;
 
     const mine = ferske === null ? lesMine() : ferske;
     /* En admin ser alle sidene, og bareMine ser bort fra lista over hvilke som
@@ -185,10 +176,21 @@ async function hentSider({ stille = false, fersk = false } = {}) {
     }
     return true;
   } catch (err) {
+    console.warn('Fikk ikke hentet sidene:', err);
     // Uten nett bruker vi den lagrede lista i stedet for å stå tomt
     const lagra = lesLokalt();
     if (lagra && lagra.length) {
-      sider = lagra;
+      /* Sidelista kom ikke, men navet kan svare likevel. Den som er tatt ut
+         av en gruppe, skal ikke beholde sidene til sider.json kommer igjen.
+         bareMine kan bare ta bort: den lagrede lista har ingen side vi ikke
+         allerede hadde fått. */
+      if (ferske === undefined) ferske = await window.HM_NAV.mineSider();
+      if (await bytteUnderveis(uid)) return false;
+      sider = ferske ? bareMine(lagra, ferske, alleSider) : lagra;
+      if (ferske) {
+        skrivMine(ferske);
+        skrivLokalt(sider, { hentet: false });
+      }
       teikn();
       visStatus('Ikke kontakt – viser lagret liste');
     } else {
@@ -198,6 +200,21 @@ async function hentSider({ stille = false, fersk = false } = {}) {
   } finally {
     knapp.classList.remove('gaar');
   }
+}
+
+/* Økten kan ha skiftet eier mens hentSider ventet på nettet: noen logget ut,
+   eller navet avviste innloggingen (utløpt for lenge siden, slettet eller
+   sperret). Da er svaret ikke lenger til den som står på skjermen, og det
+   må verken tegnes eller lagres under nøkkelen til en annen.
+
+   Er ingen innlogget lenger, er det innloggingen som skal fram – ikke
+   «Prøv igjen», som aldri kan lykkes. Er appen allerede stengt, kom
+   utloggingen først. Da står innloggingen framme fra før, og en gammel
+   henting skal ikke dra noen tilbake dit midt i en registrering. */
+async function bytteUnderveis(uid) {
+  if (window.HM_NAV.brukarId() === uid) return false;
+  if (!window.HM_NAV.erInnlogga() && appenGaar) await loggUtOgTilbake();
+  return true;
 }
 
 /* ---------- Tegn lista ---------- */
@@ -988,6 +1005,8 @@ async function loggUtOgTilbake() {
   $('sok').value = '';
   $('sokefelt').hidden = true;
   $('btnSok').setAttribute('aria-expanded', 'false');
+  // Ellers står tallet og tida til den forrige til første henting er ferdig
+  $('status').textContent = '';
   lukkNokkelArk();
   visPortFeil('loginFeil', '');
   visPortDel('portLogin');
@@ -1017,15 +1036,25 @@ $('omLoggUt').addEventListener('click', loggUtOgTilbake);
 
      Men ikke oftere enn hvert minutt. Appen kommer fram hver gang noen går
      tilbake fra et system, og med 200 brukere er det mange ganger om dagen
-     der ingenting er endret. */
+     der ingenting er endret.
+
+     Unntaket er venteskjermen. Den som nettopp har fått beskjed om at hun er
+     godkjent, skal slippe inn med en gang, ikke om et minutt. Det gjelder
+     bare den skjermen: å sjekke porten hver gang ville sendt den som er midt
+     i en registrering, til innloggingen. Svaret leses før noe kalles, for
+     opneEllerVis bytter skjerm med det samme. */
   const FRAM_IGJEN_MS = 60_000;
   let sistFram = Date.now();
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) return;
+    const venter = !$('port').hidden && !$('portVent').hidden;
+    if (venter) opneEllerVis();
+
     const naa = Date.now();
     if (naa - sistFram < FRAM_IGJEN_MS) return;
     sistFram = naa;
     sjekkVersjon();
+    if (venter) return;
     if (!$('port').hidden) opneEllerVis();
     else hentSider({ stille: true });
   });
