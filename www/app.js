@@ -979,6 +979,15 @@ async function loggUtOgTilbake() {
      kontekst gående bak innloggingsskjermen. */
   stoppBakgrunn();
   $('om').hidden = true;
+  /* Neste person på telefonen skal ikke arve noe fra den forrige. Utloggingen
+     kommer også av seg selv, mens et detaljark står åpent eller noe er skrevet
+     i søkefeltet – og arket viser en side den neste kanskje ikke har fått.
+     Søket lukkes slik søkeknappen gjør det. */
+  $('ark').hidden = true;
+  valdSide = null;
+  $('sok').value = '';
+  $('sokefelt').hidden = true;
+  $('btnSok').setAttribute('aria-expanded', 'false');
   lukkNokkelArk();
   visPortFeil('loginFeil', '');
   visPortDel('portLogin');

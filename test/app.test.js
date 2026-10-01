@@ -523,3 +523,75 @@ test('vanlig kald start: bakgrunnen startes når lista er framme', async (t) => 
   assert.equal(bakgrunn.startet, 1);
   assert.equal(portDel(w), null);
 });
+
+/* ---------- Neste person på telefonen arver ingenting ----------
+   Utloggingen kommer også av seg selv, når innloggingen viser seg å være
+   ugyldig. Da kan et detaljark stå åpent og noe stå skrevet i søkefeltet, og
+   ingen av delene skal være der når neste person logger inn. */
+
+test('automatisk utlogging tar med detaljarket, så neste bruker ikke arver det', async (t) => {
+  let ugyldig = false;
+  let neste = false; // en annen har logget inn
+  const { w, klokke } = lag({
+    lager: { 'hm-okt': OKT() },
+    nett: async (u) => {
+      if (ugyldig && u.includes('grant_type=refresh_token')) {
+        return { status: 400, json: { error_code: 'refresh_token_not_found' } };
+      }
+      if (ugyldig && u.includes('/rest/v1/mine_sider')) return { status: 401 };
+      if (u.includes('grant_type=password')) {
+        return { status: 200, json: { access_token: 'a2', refresh_token: 'r2', expires_in: 3600, user: { id: 'u2' } } };
+      }
+      return vanligNett({ mine: [neste ? 'rorlager' : 'utleie'] })(u);
+    }
+  }, t);
+  const d = w.document;
+  await ventPaaListe(w);
+
+  // u1 holder inne på en rad, og detaljarket åpner seg
+  d.querySelector('#liste .rad').dispatchEvent(new w.Event('contextmenu', { cancelable: true }));
+  assert.equal(d.getElementById('ark').hidden, false, 'arket åpnet seg aldri');
+
+  // Appen kommer fram igjen etter mer enn et minutt, og innloggingen er blitt ugyldig
+  ugyldig = true;
+  klokke.fram = 61_000;
+  d.dispatchEvent(new w.Event('visibilitychange'));
+  await til(() => portDel(w) === 'portLogin', 'innloggingsskjermen');
+  assert.equal(d.getElementById('ark').hidden, true, 'detaljarket står åpent bak innloggingen');
+
+  // Neste person logger inn
+  ugyldig = false;
+  neste = true;
+  d.getElementById('loginEpost').value = 'kari@hm.no';
+  d.getElementById('loginPassord').value = 'hemmelig';
+  d.getElementById('skjemaLogin').dispatchEvent(new w.Event('submit', { cancelable: true }));
+  await til(() => portDel(w) === null && navn(w) === 'Rørlager', 'lista til den nye brukeren');
+
+  assert.equal(d.getElementById('ark').hidden, true, 'den nye brukeren ser detaljarket til den forrige');
+  // «Åpne» skal heller ikke ha en side å åpne
+  const apnet = [];
+  w.open = (adresse) => { apnet.push(adresse); };
+  d.getElementById('arkOpne').click();
+  assert.deepEqual(apnet, [], '«Åpne» åpnet siden til den forrige');
+});
+
+test('utlogging tømmer søket, så neste bruker ikke får lista filtrert av det forrige', async (t) => {
+  const { w } = lag({
+    nett: vanligNett({ mine: ['utleie', 'tripletex'] }),
+    lager: { 'hm-okt': OKT() }
+  }, t);
+  const d = w.document;
+  await ventPaaListe(w);
+
+  d.getElementById('btnSok').click(); // søkefeltet folder seg ut
+  d.getElementById('sok').value = 'tripletex';
+  d.getElementById('sok').dispatchEvent(new w.Event('input'));
+  // Uten denne kunne testen bestått uten at noe noensinne var søkt
+  assert.equal(navn(w), 'Tripletex', 'søket filtrerte aldri lista');
+
+  await loggUt(w);
+
+  assert.equal(d.getElementById('sok').value, '');
+  assert.equal(d.getElementById('sokefelt').hidden, true);
+  assert.equal(d.getElementById('btnSok').getAttribute('aria-expanded'), 'false');
+});
