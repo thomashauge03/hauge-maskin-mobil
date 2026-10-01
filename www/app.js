@@ -13,13 +13,31 @@ const VERSJON = '1.17.0';
 const lagerNokkel = () => `hm-sider-${window.HM_NAV.brukarId() || 'ukjend'}`;
 const lagerTidNokkel = () => `${lagerNokkel()}-tid`;
 
-/* De gamle nøklene fra før innloggingen blir liggende igjen på hver telefon
-   som har hatt appen, med hele firmalista, på en enhet der ingen lenger
-   er innlogget. Ingen leser dem. Vi rydder dem bort én gang. */
-function ryddGamleNoklar() {
+/* Alt under «hm-sider» som ikke er den innloggedes, skal bort.
+
+   Nøklene har bruker-id-en i seg, og id-en leses fra økten. Er økten borte,
+   er det ingen id å gå etter, og da blir lista til den som var innlogget,
+   liggende: når en henting skriver den tilbake mens utloggingen pågår, og
+   når en økt bare går ut. Utloggingen i 1.16.1 og eldre tømte dessuten
+   «ukjend» i stedet for brukerens egne nøkler, så lister fra tidligere
+   brukere (med ikoner og -val) ligger fortsatt på mange telefoner, og det
+   samme gjør nøklene fra før innloggingen. 1.17 er en påbudt oppdatering,
+   så her kan alt det ryddes bort – personvern.html lover at det som er
+   lagret på telefonen, går ved utlogging.
+
+   Er ingen innlogget, går alt. Bindestreken etter id-en sørger for at u1 ikke
+   tar vare på lista til u10. */
+function ryddAndresLister() {
   try {
-    localStorage.removeItem('hm-sider');
-    localStorage.removeItem('hm-sider-tid');
+    const min = window.HM_NAV.erInnlogga() ? lagerNokkel() : null;
+    const bort = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || !k.startsWith('hm-sider')) continue;
+      if (min && (k === min || k.startsWith(`${min}-`))) continue;
+      bort.push(k);
+    }
+    for (const k of bort) localStorage.removeItem(k);
   } catch { /* ingenting å gjøre */ }
 }
 
@@ -715,6 +733,10 @@ function visPortFeil(id, melding) {
 /* Hvem slipper inn, og hvilken skjerm skal de se?
    Returnerer true bare når lista skal vises. */
 async function avgjerPort() {
+  /* Først av alt, før noe leses eller vises. Dette er også det som rydder ved
+     kald start. */
+  ryddAndresLister();
+
   if (!window.HM_NAV.erInnlogga()) {
     visPortDel('portLogin');
     return false;
@@ -751,7 +773,12 @@ async function avgjerPort() {
     case 'ventar': visPortDel('portVent'); return false;
     case 'sperra': visPortDel('portSperra'); return false;
     case 'utanPerson': visPortDel('portUtanPerson'); return false;
-    default: visPortDel('portLogin'); return false;
+    default:
+      /* Økten er borte (utløpt eller avvist), og med den id-en lista ligger
+         lagret under. Rydd nå, ikke først når noen logger inn igjen. */
+      ryddAndresLister();
+      visPortDel('portLogin');
+      return false;
   }
 }
 
@@ -908,11 +935,13 @@ async function loggUtOgTilbake() {
      skal bort selv om navet ikke svarer på utloggingen. */
   await window.HM_NOKKEL.fjern();
   await window.HM_NOKKEL.glemForsok();
-  /* Før utloggingen, ikke etter: lagringsnøklene har bruker-id-en i seg, og
-     den leses fra økten. Er økten borte, tømmer vi «ukjend» i stedet, og
-     lista til den som logget ut, blir liggende. */
+  // Først brukerens egne nøkler, mens id-en fortsatt kan leses fra økten
   tomLokalt();
   await window.HM_NAV.loggUt();
+  /* Så alt som er igjen, nå som ingen er innlogget. En henting som svarte
+     mens utloggingen pågikk, har kunnet skrive lista tilbake under samme
+     nøkkel. */
+  ryddAndresLister();
   meg = null;
   mittEpost = null;
   alleSider = false;
@@ -933,8 +962,6 @@ $('omLoggUt').addEventListener('click', loggUtOgTilbake);
 
 /* ---------- I gang ---------- */
 (function start() {
-  ryddGamleNoklar();
-
   /* Påbudt oppdatering går foran alt, også innloggingen. Visste vi fra sist
      at denne versjonen er for gammel, dekker skjermen med én gang, før nettet
      har rukket å svare. Appen starter som vanlig under den, så den er klar i

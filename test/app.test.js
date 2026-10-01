@@ -212,3 +212,81 @@ test('innlogging uten nett: knappen kommer tilbake, og brukeren får beskjed', a
   assert.equal(d.getElementById('loginFeil').hidden, false, 'ingen melding til brukeren');
   assert.match(d.getElementById('loginFeil').textContent, /Ingen kontakt/);
 });
+
+/* ---------- Lagrede lister som ikke hører til den innloggede ----------
+   Lagringsnøklene har bruker-id-en i seg. En liste skal ikke bli liggende på
+   telefonen etter utlogging eller utløpt økt, og det er ikke nok å tømme
+   nøklene til den som er innlogget akkurat nå. */
+
+test('ved oppstart blir lister som tilhører andre enn den innloggede, borte', async (t) => {
+  const { w } = lag({
+    nett: vanligNett({ mine: ['utleie'] }),
+    lager: {
+      'hm-okt': OKT(),
+      'hm-sider': '[]', 'hm-sider-tid': 'x',        // fra før innloggingen kom
+      'hm-sider-u0': '[]', 'hm-sider-u0-val': '[]', // en tidligere bruker: utloggingen i 1.16.1 og eldre tømte «ukjend» i stedet
+      'hm-sider-ukjend': '[]',
+      'hm-sider-u10': '[]'                          // id-en begynner likt, men er en annen bruker
+    }
+  }, t);
+  await ventPaaListe(w);
+  assert.deepEqual(hmSider(w), ['hm-sider-u1', 'hm-sider-u1-mine', 'hm-sider-u1-tid']);
+});
+
+test('utlogging mens en henting er underveis: ingen liste blir liggende', async (t) => {
+  let hold = false;
+  let slippMine;
+  let slippUt;
+  const mineSperre = new Promise((ferdig) => { slippMine = ferdig; });
+  const utSperre = new Promise((ferdig) => { slippUt = ferdig; });
+  const vanlig = vanligNett({ mine: ['utleie'] });
+  const { w, kall } = lag({
+    lager: { 'hm-okt': OKT() },
+    nett: async (u) => {
+      if (hold && u.includes('/rest/v1/mine_sider')) {
+        await mineSperre;
+        return { status: 200, json: [{ side_id: 'utleie' }] };
+      }
+      if (u.includes('/auth/v1/logout')) { await utSperre; return { status: 204 }; }
+      return vanlig(u);
+    }
+  }, t);
+  const d = w.document;
+  await ventPaaListe(w);
+  const antall = (del) => kall.filter((k) => k.u.includes(del)).length;
+
+  hold = true;
+  d.getElementById('btnOppdater').click(); // en henting som blir hengende
+  await til(() => antall('/rest/v1/mine_sider') === 2, 'at hentingen er underveis');
+
+  d.getElementById('btnOm').click();
+  d.getElementById('omLoggUt').click(); // og en utlogging der navkallet drøyer
+  await til(() => antall('/auth/v1/logout') === 1, 'at utloggingen er underveis');
+
+  slippMine(); // hentingen svarer mens utloggingen pågår, og skriver lista tilbake
+  await til(() => lagretOmU1(w).length > 0, 'at hentingen skrev lista');
+  slippUt();
+  await til(() => portDel(w) === 'portLogin', 'innloggingsskjermen');
+
+  assert.deepEqual(hmSider(w), []);
+  assert.equal(w.localStorage.getItem('hm-okt'), null);
+});
+
+test('en økt som er gått ut ved oppstart, tar listene med seg', async (t) => {
+  const vanlig = vanligNett({ mine: ['utleie'] });
+  const { w } = lag({
+    nett: async (u) => (u.includes('grant_type=refresh_token')
+      ? { status: 400, json: { error_code: 'refresh_token_not_found' } }
+      : vanlig(u)),
+    lager: {
+      'hm-okt': OKT('u1', 0), // utløpt: første kall må fornyes, og fornyingen blir avvist
+      'hm-sider-u1': JSON.stringify(SIDER.pages),
+      'hm-sider-u1-mine': '["utleie"]',
+      'hm-sider-u1-tid': new Date().toISOString()
+    }
+  }, t);
+  await til(() => portDel(w) === 'portLogin', 'innloggingsskjermen');
+
+  assert.equal(w.localStorage.getItem('hm-okt'), null);
+  assert.deepEqual(hmSider(w), []);
+});
