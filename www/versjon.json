@@ -1,7 +1,7 @@
 {
-  "_om": "Nyeste versjon av mobilappen. Appen sjekker denne fila ved oppstart og hver gang den kommer fram igjen. Er \"minimum\" nyere enn versjonen på telefonen, dekker en skjerm hele appen til den nye er installert. Ellers får du bare et rødt felt du kan trykke bort. APK-en MÅ ligge på GitHub før denne fila blir pushet – ellers står alle foran en nedlastingsknapp som gir 404.",
-  "versjon": "1.16.1",
-  "minimum": "1.16.0",
-  "apk": "https://github.com/thomashauge03/hauge-maskin-mobil/releases/latest/download/Hauge-Maskin-1.16.1.apk",
-  "endringar": "Siste forsøk: under Om → Nøkkel for innlogging står hvert steg fra sist du åpnet et system fra appen. Kommer ikke 🔑-knappen, viser et skjermbilde av dette hvorfor. Aldri e-post eller passord."
+  "_om": "Nyeste versjon av mobilappen. Appen sjekker denne fila ved oppstart og når den kommer fram igjen, høyst én gang i minuttet. Er \"minimum\" nyere enn versjonen på telefonen, dekker en skjerm hele appen til den nye er installert. Ellers får du bare et rødt felt du kan trykke bort. APK-en MÅ ligge på GitHub før denne fila blir pushet – ellers står alle foran en nedlastingsknapp som gir 404.",
+  "versjon": "1.17.0",
+  "minimum": "1.17.0",
+  "apk": "https://github.com/thomashauge03/hauge-maskin-mobil/releases/latest/download/Hauge-Maskin-1.17.0.apk",
+  "endringar": "Du ser bare sidene du har fått gjennom gruppene dine. Appen logger deg ikke ut når nettet er travelt, og henter sidelista raskere."
 }
