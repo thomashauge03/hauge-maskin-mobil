@@ -1,7 +1,7 @@
 {
   "name": "hauge-maskin-mobil",
   "version": "1.0.0",
-  "description": "Hauge Maskin – alle systema samla på éin stad, på mobil",
+  "description": "Hauge Maskin – systemene du har tilgang til, samlet på ett sted, på mobil",
   "private": true,
   "scripts": {
     "sync": "cap sync",

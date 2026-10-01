@@ -1,7 +1,7 @@
 {
   "name": "Hauge Maskin",
   "short_name": "Hauge Maskin",
-  "description": "Alle systema til Hauge Maskin samla på éin stad",
+  "description": "Systemene du har tilgang til hos Hauge Maskin, samlet på ett sted",
   "lang": "no",
   "start_url": ".",
   "scope": ".",

@@ -1,8 +1,9 @@
 # Hauge Maskin – mobil
 
-Alle systemene til Hauge Maskin samlet på ett sted, på telefonen. Samme felles
-sideliste som skrivebordsappen: du legger til en side **ett** sted, og både PC,
-Android og iPhone får den.
+Systemene du har tilgang til hos Hauge Maskin, samlet på ett sted, på
+telefonen. Samme felles sideliste som skrivebordsappen: du legger til en side
+**ett** sted, og både PC, Android og iPhone får den. Hver bruker ser bare
+sidene gruppene har gitt dem.
 
 ## Slik får du appen
 
