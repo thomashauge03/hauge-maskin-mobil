@@ -164,14 +164,20 @@ async function hentSider({ stille = false, fersk = false } = {}) {
     }
 
     const mine = ferske === null ? lesMine() : ferske;
-    if (mine === null) throw new Error('Vet ikke hvilke sider som er mine');
+    /* En admin ser alle sidene, og bareMine ser bort fra lista over hvilke som
+       er gitt. Å kreve den likevel ga «Fikk ikke hentet» hver gang navet ikke
+       svarte på mine_sider. */
+    if (mine === null && !alleSider) throw new Error('Vet ikke hvilke sider som er mine');
 
     sider = bareMine(felles, mine, alleSider);
     teikn();
 
     if (ferske === null) {
-      // Ikke lagre en liste vi ikke vet er riktig filtrert – men vis den.
-      visStatus('Oppdatert · tilgangen er fra sist');
+      /* Ikke lagre en liste vi ikke vet er riktig filtrert – men vis den.
+         Sidelista er fersk, men tilgangen er den fra sist, og det skal stå.
+         I PWA-en lykkes sider.json også helt uten nett, for da svarer
+         servicearbeideren med sin kopi. «Oppdatert» ville vært feil. */
+      visStatus('Ikke kontakt – tilgangen er fra sist');
     } else {
       skrivMine(ferske);
       skrivLokalt(sider);

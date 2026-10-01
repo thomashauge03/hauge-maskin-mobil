@@ -401,3 +401,38 @@ test('en gammel henting som svarer etter utloggingen, lagrer ingenting og drar i
   assert.deepEqual(hmSider(w), [], 'den gamle hentingen skrev en liste etter utloggingen');
   assert.equal(portDel(w), 'portNy', 'den gamle hentingen dro brukeren tilbake til innloggingen');
 });
+
+/* ---------- Navet svarer ikke på mine_sider ----------
+   Sidelista (sider.json) kommer fra GitHub, og i PWA-en svarer
+   servicearbeideren med sin lagrede kopi av den når nettet er borte. Henting
+   av sidelista lykkes altså også uten kontakt med navet, og tilgangen må da
+   komme fra det vi visste sist. */
+
+test('navet svarer ikke, og tilgangen er kjent fra sist: den ferske lista filtrert med det, og ærlig status', async (t) => {
+  const vanlig = vanligNett({ mine: [] });
+  const gammel = [{ id: 'utleie', name: 'Utleie (gammelt navn)', url: 'https://utleie.example/', group: 'Kunder' }];
+  const { w } = lag({
+    lager: {
+      'hm-okt': OKT(),
+      'hm-sider-u1': JSON.stringify(gammel),
+      'hm-sider-u1-mine': JSON.stringify(['utleie'])
+    },
+    nett: async (u) => (u.includes('/rest/v1/mine_sider') ? { status: 503 } : vanlig(u))
+  }, t);
+
+  // Det ferske navnet, og bare den ene siden vi vet at vi har fått
+  await til(() => navn(w) === 'Utleie', 'den ferske lista, filtrert med det vi visste');
+
+  assert.equal(w.document.getElementById('status').textContent, 'Ikke kontakt – tilgangen er fra sist');
+  // En liste vi ikke vet er riktig filtrert, blir ikke lagret
+  assert.equal(JSON.parse(w.localStorage.getItem('hm-sider-u1'))[0].name, 'Utleie (gammelt navn)');
+});
+
+test('en admin ser alle sidene selv om navet ikke svarer på mine_sider', async (t) => {
+  const { w } = lag({
+    nett: vanligNett({ mine: null, alle: true }),
+    lager: { 'hm-okt': OKT() }
+  }, t);
+  await ventPaaListe(w);
+  assert.equal(navn(w), 'Utleie,Tripletex,Rørlager');
+});
