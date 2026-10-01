@@ -22,46 +22,115 @@ const SIDER = { pages: [
   { id: 'rorlager', name: 'Rørlager', url: 'https://rorlager.example/', group: 'Lager' }
 ] };
 
-/* mine: side-id-ene navet gir, eller null for at navet ikke svarer. */
-async function start({ mine, alle = false }) {
+const vent = (ms) => new Promise((ferdig) => setTimeout(ferdig, ms));
+
+/* Venter til noe er sant, i stedet for å gjette hvor lang tid appen bruker. */
+async function til(vilkaar, hva) {
+  for (let i = 0; i < 300; i++) {
+    if (vilkaar()) return;
+    await vent(10);
+  }
+  assert.fail(`ventet for lenge på ${hva}`);
+}
+
+/* En innlogget økt i lagringen, slik nav.js skriver den. */
+const OKT = (brukar = 'u1', gaarUt = Date.now() + 3600e3) =>
+  JSON.stringify({ access_token: 'a', refresh_token: 'r', gaar_ut: gaarUt, brukar_id: brukar });
+
+/* Nettet når alt virker. mine: side-id-ene navet gir, eller null for at
+   navet ikke svarer på mine_sider. */
+function vanligNett({ mine = [], alle = false } = {}) {
+  return async (u) => {
+    if (u.includes('sider.json')) return { status: 200, json: SIDER };
+    if (u.includes('/rest/v1/min_status')) {
+      return { status: 200, json: [{ status: 'godkjent', navn: 'Ola', epost: 'ola@hm.no', alle_sider: alle }] };
+    }
+    if (u.includes('/rest/v1/mine_sider')) {
+      return mine === null ? { status: 500 } : { status: 200, json: mine.map((side_id) => ({ side_id })) };
+    }
+    return { status: 404 };
+  };
+}
+
+/* Appen, startet i jsdom med et nett testen styrer.
+   nett(url, valg) gir { status, json }. Den kan vente, og den kan kaste –
+   det er slik «ingen nett» ser ut for fetch.
+   lager: det som står i lagringen fra før.
+   film: en stand-in for åpningsfilmen, så vi kan se om bakgrunnen blir startet.
+   t: testen. Da blir vinduet lukket selv om testen feiler. */
+function lag({ nett, lager = {}, film = false }, t) {
   const dom = new JSDOM(HTML, {
     url: 'https://thomashauge03.github.io/hauge-maskin-mobil/',
     runScripts: 'outside-only',
     pretendToBeVisual: true
   });
   const w = dom.window;
-  w.localStorage.setItem('hm-okt', JSON.stringify({
-    access_token: 'a', refresh_token: 'r', gaar_ut: Date.now() + 3600e3, brukar_id: 'u1'
-  }));
-  const svar = (json) => ({ ok: true, status: 200, json: async () => json });
-  w.fetch = async (url) => {
+  if (t) t.after(() => w.close());
+
+  /* Tida appen ser: den virkelige, pluss det testen har spolt fram. */
+  const klokke = { fram: 0 };
+  w.Date.now = () => Date.now() + klokke.fram;
+
+  for (const [k, v] of Object.entries(lager)) w.localStorage.setItem(k, v);
+
+  const kall = [];
+  w.fetch = async (url, valg = {}) => {
     const u = String(url);
-    if (u.includes('sider.json')) return svar(SIDER);
-    if (u.includes('/rest/v1/min_status')) {
-      return svar([{ status: 'godkjent', navn: 'Ola', epost: 'ola@hm.no', alle_sider: alle }]);
-    }
-    if (u.includes('/rest/v1/mine_sider')) {
-      return mine === null
-        ? { ok: false, status: 500, json: async () => null }
-        : svar(mine.map((side_id) => ({ side_id })));
-    }
-    return { ok: false, status: 404, json: async () => null };
+    kall.push({ u, cache: valg.cache });
+    const s = await nett(u, valg);
+    if (s instanceof Error) throw s;
+    return {
+      ok: s.status >= 200 && s.status < 300,
+      status: s.status,
+      json: async () => (s.json === undefined ? null : s.json)
+    };
   };
   w.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
-  for (const kode of SKRIPT) w.eval(kode);
 
+  const bakgrunn = { startet: 0 };
+  if (film) {
+    w.HM_LASTAR = {
+      lag: () => ({ start() { return this; }, sett() {}, ferdig: async () => {}, spelt: async () => {} }),
+      bakgrunn: () => { bakgrunn.startet++; return { pause() {}, riv() {} }; }
+    };
+  }
+
+  for (const kode of SKRIPT) w.eval(kode);
+  return { w, kall, klokke, bakgrunn };
+}
+
+async function ventPaaListe(w) {
   const d = w.document;
   for (let i = 0; i < 200; i++) {
     const rader = d.querySelectorAll('#liste .rad').length;
     const tomt = !d.getElementById('tomt').hidden && d.getElementById('tomtTekst').textContent !== 'Henter sidene…';
     if (rader || tomt) break;
-    await new Promise((ferdig) => setTimeout(ferdig, 10));
+    await vent(10);
   }
+}
+
+/* mine: side-id-ene navet gir, eller null for at navet ikke svarer. */
+async function start({ mine, alle = false }) {
+  const { w } = lag({ nett: vanligNett({ mine, alle }), lager: { 'hm-okt': OKT() } });
+  await ventPaaListe(w);
   return w;
 }
 
 const navn = (w) => [...w.document.querySelectorAll('#liste .rad strong')].map((n) => n.textContent).join(',');
 const tomTekst = (w) => w.document.getElementById('tomtTekst').textContent;
+
+/* Delen av porten som står framme, eller null når porten er åpen for lista. */
+const portDel = (w) => {
+  if (w.document.getElementById('port').hidden) return null;
+  const del = [...w.document.querySelectorAll('.port-del')].find((s) => !s.hidden);
+  return del ? del.id : null;
+};
+
+/* Alt appen har lagret om lister, uansett hvem det gjelder. */
+const hmSider = (w) =>
+  Array.from({ length: w.localStorage.length }, (_, i) => w.localStorage.key(i))
+    .filter((k) => k.startsWith('hm-sider'))
+    .sort();
 
 test('bare sidene navet gir', async () => {
   const w = await start({ mine: ['utleie'] });
@@ -92,10 +161,7 @@ test('svarer ikke navet, og vi aldri har visst det, vises ingenting', async () =
 /* Nøklene i lagringen har bruker-id-en (u1) i seg, og id-en leses fra økten.
    Rydder appen først når økten er borte, tømmer den «ukjend» i stedet, og
    lista til den som logget ut, blir liggende. */
-const lagretOmU1 = (w) =>
-  Array.from({ length: w.localStorage.length }, (_, i) => w.localStorage.key(i))
-    .filter((k) => k.startsWith('hm-sider-u1'))
-    .sort();
+const lagretOmU1 = (w) => hmSider(w).filter((k) => k.startsWith('hm-sider-u1'));
 
 // Slik brukeren gjør det: Om, så Logg ut. Ferdig når porten er tilbake.
 async function loggUt(w) {
@@ -103,7 +169,7 @@ async function loggUt(w) {
   d.getElementById('btnOm').click();
   d.getElementById('omLoggUt').click();
   for (let i = 0; i < 200 && d.getElementById('port').hidden; i++) {
-    await new Promise((ferdig) => setTimeout(ferdig, 10));
+    await vent(10);
   }
 }
 
