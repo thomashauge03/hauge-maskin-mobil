@@ -46,7 +46,7 @@ max-age=300`, `Access-Control-Allow-Origin: *`. En betinget forespørsel med
 |---|---|---|
 | Ingen ser noe før de er i en gruppe – ansatte og kunder likt | Standardsider for alle, og kunder som egen type | Eiers beslutning. Appen samler lenker; eier legger folk i grupper selv. En ny side blir aldri synlig for noen av seg selv. |
 | Alle starter tomt, ingen overgangsgruppe | Gruppa «Ansatte» med dagens standardsider og alle godkjente i den | Eiers beslutning. [Rekkefølgen](#rekkefølge) gir likevel eier tid til å lage gruppene før telefonene bytter regel. |
-| Adminer følger gruppene, som alle andre (endret 01.10.2026, migrasjon 0018) | Aktive adminer ser alle sidene, slik 0017 gjorde | Eiers beslutning etter slippet: eier la seg i «Vanlig ansatt» og så likevel alt. En admin uten `personer`-rad slipper inn (0014), men ser ingenting før kontoen har en personrad. |
+| Adminer følger gruppene, som alle andre (endret 01.10.2026, migrasjon 0018) | Aktive adminer ser alle sidene, slik 0017 gjorde | Eiers beslutning etter slippet: eier la seg i «Vanlig ansatt» og så likevel alt. Det skal heller ikke være noen ny admin i appen: fra 0019 slipper en admin uten `personer`-rad ikke inn (appen viser «Noe gikk galt», som før 0014). |
 | Søk og filter i nettleseren, over en slank liste | Søk på serveren med sideveksling | ≈ 200 byte per person: 1000 personer er 200 KB, og å filtrere dem tar under et millisekund. Serversøk gir en rundtur per tastetrykk og mer kode, for en skala dette ikke når. |
 | Registreringen i appen er uendret | «Ansatt/kunde» i skjemaet | Eiers beslutning: likt for alle. |
 | `mine_sideval` står urørt | Skrive den om til ny regel | Appversjon 1.7–1.14 bruker den. Uten sidelista i databasen kan den ikke uttrykke «skjul alt som ikke er gitt». `minimum` 1.17.0 tvinger alt fra 1.15 over. Sidelista er offentlig på GitHub, så ingen hemmelighet lekker. |
@@ -134,7 +134,8 @@ exists (
 Den settes på begge leddene i visningen (personraden og admin-reserveveien fra 0014).
 
 > Endret 01.10.2026 i migrasjon 0018: `alle_sider` er alltid false. Adminer
-> følger gruppene. Kolonnen står igjen fordi appen ber om den.
+> følger gruppene. Kolonnen står igjen fordi appen ber om den. Migrasjon 0019
+> fjernet admin-reserveveien: bare personraden er igjen.
 
 ### Rettigheter og indekser
 
