@@ -47,3 +47,38 @@ test('installasjonen henter skalet forbi nettleserens mellomlager', async () => 
   assert.deepEqual(gjennomMellomlager.map(adresse), []);
   assert.ok(hoppetOver(), 'installasjonen ble ikke ferdig');
 });
+
+/* Når svaret er levert, kan nettleseren stoppe servicearbeideren når den
+   vil. Lagringen av reservekopien må derfor holde den i live til den er
+   ferdig – ellers kan kopien mangle akkurat når nettet blir borte. */
+test('reservekopien av sidelista er lagret før servicearbeideren slipper', async () => {
+  const behandlere = {};
+  let lagret = false;
+  const self = {
+    addEventListener: (type, fn) => { behandlere[type] = fn; },
+    location: { origin: 'https://thomashauge03.github.io' }
+  };
+  const caches = {
+    open: async () => ({
+      put: async () => {
+        await new Promise((ferdig) => setTimeout(ferdig, 20));
+        lagret = true;
+      }
+    })
+  };
+  const fetch = async () => ({ ok: true, clone: () => ({}) });
+  vm.runInNewContext(KODE, { self, caches, fetch, Request: class {}, URL });
+
+  let svar;
+  const iLive = [];
+  behandlere.fetch({
+    request: { url: 'https://raw.githubusercontent.com/thomashauge03/hauge-maskin-app/main/sider.json?t=1' },
+    respondWith: (p) => { svar = p; },
+    waitUntil: (p) => { iLive.push(p); }
+  });
+  await svar;
+
+  assert.equal(iLive.length, 1, 'lagringen holder ikke servicearbeideren i live');
+  await Promise.all(iLive);
+  assert.ok(lagret, 'servicearbeideren slapp før kopien var lagret');
+});

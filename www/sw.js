@@ -4,7 +4,7 @@
    lagrede kopien uten å spørre nettet, så et uendret navn betyr at alle som
    har appen på hjem-skjermen fortsetter med den gamle utgaven på ubestemt
    tid – også etter at en ny er lagt ut. */
-const CACHE = 'hauge-maskin-v22';
+const CACHE = 'hauge-maskin-v23';
 const SKALET = [
   './',
   './index.html',
@@ -55,14 +55,17 @@ self.addEventListener('fetch', (e) => {
        for å gå forbi GitHubs mellomlager, og før ble hver slik adresse en ny
        kopi på en halv megabyte – mens reservekopien aldri ble funnet, fordi
        neste adresse var en annen. Bare svar som er ok, blir lagret: et 429
-       skal ikke bli reservekopien. */
+       skal ikke bli reservekopien.
+
+       waitUntil: når svaret er levert, kan nettleseren stoppe
+       servicearbeideren når den vil, og lagringen ville da blitt avbrutt. */
     const nokkel = url.origin + url.pathname;
     e.respondWith(
       fetch(e.request)
         .then((res) => {
           if (res.ok) {
             const kopi = res.clone();
-            caches.open(CACHE).then((c) => c.put(nokkel, kopi));
+            e.waitUntil(caches.open(CACHE).then((c) => c.put(nokkel, kopi)));
           }
           return res;
         })
