@@ -94,9 +94,35 @@ test('søket: æ, ø, å og de gamle skrivemåtene', () => {
 test('søket treffer hvert felt for seg, normalisert', () => {
   const b = side({ name: 'Bjørn', url: 'https://kontor.vercel.app/', group: 'Annet', help: '' });
   assert.ok(treffer(b, 'bjorn') && treffer(b, 'bjoern'));   // navnet alene, ikke adressen
-  assert.ok(treffer(b, 'kontor.vercel'));                   // adressen alene
   assert.ok(treffer(side({ group: 'Økonomi', help: 'Håkon godkjenner' }), 'okonomi haakon')); // gruppe + forklaring
   assert.equal(normaliser('café'), 'cafe');                 // aksenter fjernes
   assert.equal(normaliser('Ærlig'), 'aerlig');              // æ blir ae
   assert.equal(bareMine(lesSider({ pages: [side({ id: 7 })] }), [7], false).length, 1); // tall-id fra navet
+});
+
+/* Ordene i adressene går igjen på nesten hver side. Var adressen med, ga
+   «app» eller «vercel» hele lista. */
+test('søket ser ikke på adressen', () => {
+  const s = side({ name: 'Rørlager', url: 'https://hauge-maskin-app.vercel.app/', group: 'Lager', help: 'Rør og deler' });
+  for (const ord of ['https', 'app', 'maskin', 'vercel']) {
+    assert.equal(treffer(s, ord), false, `«${ord}» traff på adressen`);
+  }
+  assert.ok(treffer(s, 'rorlager'));
+});
+
+/* NFD deler ikke opp disse, så aksentfjerningen tar dem ikke. */
+test('søket: ł, đ, ð, ŋ, ŧ, þ, ß og ı skrives som folk skriver dem uten', () => {
+  for (const [navn, skrevet] of [
+    ['Łukasz', 'lukasz'],
+    ['Đorđe', 'dorde'],
+    ['Guðrún', 'gudrun'],
+    ['Iŋgá', 'inga'],
+    ['Ŧ', 't'],
+    ['Þór', 'thor'],
+    ['Strauß', 'strauss'],
+    ['Yıldız', 'yildiz']
+  ]) {
+    assert.equal(normaliser(navn), skrevet, navn);
+  }
+  assert.ok(treffer(side({ name: 'Timer for Łukasz' }), 'lukasz'));
 });

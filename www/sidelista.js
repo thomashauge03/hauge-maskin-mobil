@@ -45,6 +45,11 @@
     return liste.filter((p) => mineSett.has(p.id));
   }
 
+  /* Bokstaver NFD ikke deler opp, og som aksentfjerningen derfor ikke tar:
+     polsk ł, đ fra Balkan og samisk, islandsk ð og þ, samisk ŋ og ŧ, tysk ß
+     og tyrkisk ı. «lukasz» skal finne Łukasz. */
+  const UTEN_AKSENT = { ł: 'l', đ: 'd', ð: 'd', ŋ: 'n', ŧ: 't', þ: 'th', ß: 'ss', ı: 'i' };
+
   /* Søket. «bjorn» og «bjoern» finner Bjørn, «haakon» finner Håkon – aa og
      oe er det folk skriver på et tastatur uten æøå. Samme regel som søket i
      adminbordet (src/lib/appsok.ts). Repoene deler ikke kode, så den står to
@@ -55,6 +60,7 @@
       .replace(/æ/g, 'ae')
       .replace(/ø/g, 'o')
       .replace(/å/g, 'a')
+      .replace(/[łđðŋŧþßı]/g, (b) => UTEN_AKSENT[b])
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/aa/g, 'a')
@@ -62,11 +68,13 @@
       .trim();
   }
 
-  /* Treffer siden alle ordene i søket? Navn, adresse, gruppe og forklaring. */
+  /* Treffer siden alle ordene i søket? Navn, gruppe og forklaring.
+     Ikke adressen: «https», «app» og «vercel» står i nesten alle, og ga hele
+     lista. */
   function treffer(side, sok) {
     const ord = normaliser(sok).split(/\s+/).filter(Boolean);
     if (!ord.length) return true;
-    const tekst = [side.name, side.url, side.group, side.help].map(normaliser).join(' ');
+    const tekst = [side.name, side.group, side.help].map(normaliser).join(' ');
     return ord.every((o) => tekst.includes(o));
   }
 
