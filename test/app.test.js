@@ -436,3 +436,55 @@ test('en admin ser alle sidene selv om navet ikke svarer på mine_sider', async 
   await ventPaaListe(w);
   assert.equal(navn(w), 'Utleie,Tripletex,Rørlager');
 });
+
+/* ---------- Belastningen: hva appen spør om, og hvor ofte ----------
+   Med 200 brukere er det disse reglene som holder GitHub og navet rolige.
+   Testene står her for at en senere endring ikke skal ta dem bort uten at
+   noen merker det. */
+
+const SIDER_URL = 'https://raw.githubusercontent.com/thomashauge03/hauge-maskin-app/main/sider.json';
+
+test('kald start: ett kall hver, og sider.json med fast adresse og no-cache', async (t) => {
+  const { w, kall } = lag({ nett: vanligNett({ mine: ['utleie'] }), lager: { 'hm-okt': OKT() } }, t);
+  await ventPaaListe(w);
+
+  assert.equal(antallKall(kall, 'sider.json'), 1);
+  assert.equal(antallKall(kall, '/rest/v1/min_status'), 1);
+  assert.equal(antallKall(kall, '/rest/v1/mine_sider'), 1);
+  assert.equal(kall.length, 3, 'appen spør om mer enn den trenger ved oppstart');
+
+  // Fast adresse: nettleseren spør «er den endret?» selv, og GitHub svarer 304 uten innhold
+  const side = kall.find((k) => k.u.includes('sider.json'));
+  assert.equal(side.u, SIDER_URL);
+  assert.equal(side.cache, 'no-cache');
+});
+
+test('Oppdater går forbi mellomlageret, det gjør ikke den automatiske hentingen', async (t) => {
+  const { w, kall } = lag({ nett: vanligNett({ mine: ['utleie'] }), lager: { 'hm-okt': OKT() } }, t);
+  await ventPaaListe(w);
+
+  w.document.getElementById('btnOppdater').click();
+  await til(() => antallKall(kall, 'sider.json') === 2, 'at Oppdater henter sider.json på nytt');
+
+  const oppdater = kall.filter((k) => k.u.includes('sider.json'))[1];
+  assert.ok(oppdater.u.startsWith(`${SIDER_URL}?t=`), 'Oppdater bruker ikke ?t=');
+  assert.match(oppdater.u.slice(SIDER_URL.length), /^\?t=\d+$/);
+  assert.equal(oppdater.cache, 'no-store');
+});
+
+test('tilbake i appen innen et minutt gir ingen nye kall, etter et minutt ett sett', async (t) => {
+  const { w, kall, klokke } = lag({ nett: vanligNett({ mine: ['utleie'] }), lager: { 'hm-okt': OKT() } }, t);
+  await ventPaaListe(w);
+  const tilbake = () => w.document.dispatchEvent(new w.Event('visibilitychange'));
+  const foerst = kall.length;
+
+  klokke.fram = 30_000;
+  tilbake();
+  await vent(50);
+  assert.equal(kall.length, foerst, 'appen spurte på nytt før det var gått et minutt');
+
+  klokke.fram = 61_000;
+  tilbake();
+  await til(() => antallKall(kall, '/rest/v1/mine_sider') === 2, 'at appen henter på nytt etter et minutt');
+  assert.equal(antallKall(kall, 'sider.json'), 2);
+});
