@@ -127,6 +127,8 @@ function tomLokalt() {
    fersk: Oppdater-knappen. Går forbi GitHubs mellomlager, som ellers kan
    holde på en endret fil i opptil fem minutter. */
 async function hentSider({ stille = false, fersk = false } = {}) {
+  // Hvem henter vi for? Svaret skal bare brukes for den samme
+  const uid = window.HM_NAV.brukarId();
   const knapp = $('btnOppdater');
   if (!stille) knapp.classList.add('gaar');
   try {
@@ -146,6 +148,21 @@ async function hentSider({ stille = false, fersk = false } = {}) {
        er den fra forrige gang. Har vi aldri visst det, vises den lagrede
        lista som den var. Aldri hele lista. */
     const ferske = await window.HM_NAV.mineSider();
+
+    /* Økten kan ha skiftet eier mens vi ventet: noen logget ut, eller navet
+       avviste innloggingen (utløpt for lenge siden, slettet eller sperret).
+       Da er dette ikke lenger svaret til den som står på skjermen, og vi må
+       verken tegne det eller lagre det under nøkkelen til en annen.
+
+       Er ingen innlogget lenger, er det innloggingen som skal fram – ikke
+       «Prøv igjen», som aldri kan lykkes. Er appen allerede stengt, kom
+       utloggingen først. Da står innloggingen framme fra før, og en gammel
+       henting skal ikke dra noen tilbake dit midt i en registrering. */
+    if (window.HM_NAV.brukarId() !== uid) {
+      if (!window.HM_NAV.erInnlogga() && appenGaar) await loggUtOgTilbake();
+      return false;
+    }
+
     const mine = ferske === null ? lesMine() : ferske;
     if (mine === null) throw new Error('Vet ikke hvilke sider som er mine');
 
@@ -864,7 +881,13 @@ async function opneEllerVis({ medFilm = false } = {}) {
   const arbeid = (async () => {
     const inn = await avgjerPort();
     if (lastar) lastar.sett(0.55, inn ? 'Henter sidene…' : 'Nesten klar…');
-    if (inn) { await startApp(); startBakgrunn(); }
+    if (inn) {
+      await startApp();
+      /* Fant startApp ut at innloggingen er ugyldig, står porten oppe igjen.
+         Da er det ingenting å se bak den, og en WebGL-kontekst som venter der
+         er bare bortkastet. */
+      if ($('port').hidden) startBakgrunn();
+    }
   })();
 
   if (!lastar) { await arbeid; return; }

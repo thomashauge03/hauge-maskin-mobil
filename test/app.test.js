@@ -290,3 +290,114 @@ test('en økt som er gått ut ved oppstart, tar listene med seg', async (t) => {
   assert.equal(w.localStorage.getItem('hm-okt'), null);
   assert.deepEqual(hmSider(w), []);
 });
+
+/* ---------- Innloggingen blir ugyldig mens appen er åpen ----------
+   Navet avviser fornyingen (utløpt for lenge siden, slettet eller sperret).
+   Da skal innloggingen fram – ikke «Fikk ikke hentet sidene» med en
+   «Prøv igjen» som aldri kan lykkes. */
+
+const ugyldigInnlogging = (vanlig, naa = () => true) => async (u) => {
+  if (naa() && u.includes('grant_type=refresh_token')) {
+    return { status: 400, json: { error_code: 'refresh_token_not_found' } };
+  }
+  if (naa() && u.includes('/rest/v1/mine_sider')) return { status: 401 };
+  return vanlig(u);
+};
+
+const antallKall = (kall, del) => kall.filter((k) => k.u.includes(del)).length;
+
+test('ugyldig innlogging mens appen er åpen: innloggingen kommer fram, og ingen liste blir liggende', async (t) => {
+  let ugyldig = false;
+  const { w } = lag({
+    lager: { 'hm-okt': OKT() },
+    nett: ugyldigInnlogging(vanligNett({ mine: ['utleie'] }), () => ugyldig)
+  }, t);
+  await ventPaaListe(w);
+  assert.equal(navn(w), 'Utleie');
+  assert.ok(lagretOmU1(w).length, 'lista ble aldri lagret');
+
+  ugyldig = true;
+  w.document.getElementById('btnOppdater').click();
+  await til(() => portDel(w) === 'portLogin', 'innloggingsskjermen');
+
+  assert.equal(w.localStorage.getItem('hm-okt'), null);
+  assert.deepEqual(hmSider(w), []);
+});
+
+test('ugyldig innlogging ved oppstart: bakgrunnen startes ikke bak innloggingsskjermen', async (t) => {
+  const { w, bakgrunn } = lag({
+    film: true,
+    lager: { 'hm-okt': OKT() },
+    nett: ugyldigInnlogging(vanligNett({ mine: ['utleie'] }))
+  }, t);
+  await til(() => portDel(w) === 'portLogin', 'innloggingsskjermen');
+  await vent(50); // oppstarten skal få gjort seg ferdig
+
+  assert.equal(bakgrunn.startet, 0, 'en WebGL-kontekst ble startet bak innloggingsskjermen');
+});
+
+test('en henting som svarer etter at en annen har logget inn, lagrer ikke noe for den nye', async (t) => {
+  let hold = false;
+  let slipp;
+  const sperre = new Promise((ferdig) => { slipp = ferdig; });
+  const vanlig = vanligNett({ mine: ['utleie'] });
+  const { w, kall } = lag({
+    lager: { 'hm-okt': OKT() },
+    nett: async (u) => {
+      if (hold && u.includes('/rest/v1/mine_sider')) {
+        await sperre;
+        return { status: 200, json: [{ side_id: 'utleie' }] };
+      }
+      return vanlig(u);
+    }
+  }, t);
+  await ventPaaListe(w);
+
+  hold = true;
+  w.document.getElementById('btnOppdater').click();
+  await til(() => antallKall(kall, '/rest/v1/mine_sider') === 2, 'at hentingen er underveis');
+
+  w.localStorage.setItem('hm-okt', OKT('u2')); // en annen logger inn mens svaret er underveis
+  slipp();
+  await vent(100);
+
+  assert.deepEqual(
+    hmSider(w).filter((k) => k.startsWith('hm-sider-u2')),
+    [],
+    'lista til den forrige ble lagret for den nye'
+  );
+});
+
+test('en gammel henting som svarer etter utloggingen, lagrer ingenting og drar ingen tilbake til innloggingen', async (t) => {
+  let hold = false;
+  let slipp;
+  const sperre = new Promise((ferdig) => { slipp = ferdig; });
+  const vanlig = vanligNett({ mine: ['utleie'] });
+  const { w, kall } = lag({
+    lager: { 'hm-okt': OKT() },
+    nett: async (u) => {
+      if (hold && u.includes('/rest/v1/mine_sider')) {
+        await sperre;
+        return { status: 200, json: [{ side_id: 'utleie' }] };
+      }
+      if (u.includes('/auth/v1/logout')) return { status: 204 };
+      return vanlig(u);
+    }
+  }, t);
+  const d = w.document;
+  await ventPaaListe(w);
+
+  hold = true;
+  d.getElementById('btnOppdater').click();
+  await til(() => antallKall(kall, '/rest/v1/mine_sider') === 2, 'at hentingen er underveis');
+
+  await loggUt(w); // utloggingen blir ferdig før hentingen svarer
+  d.getElementById('tilNy').click(); // og neste person begynner å registrere seg
+  assert.equal(portDel(w), 'portNy');
+
+  slipp();
+  await vent(100);
+
+  assert.deepEqual(hmSider(w), [], 'den gamle hentingen skrev en liste etter utloggingen');
+  assert.equal(portDel(w), 'portNy', 'den gamle hentingen dro brukeren tilbake til innloggingen');
+});
