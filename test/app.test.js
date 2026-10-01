@@ -194,3 +194,21 @@ for (const [hvem, valg, ventet] of [
     w.close();
   });
 }
+
+/* Innlogging uten nett. Skjemaet slår av knappen mens det venter. Kastet
+   fetch uten at noen fanget det, ble knappen stående slått av, og brukeren
+   fikk aldri vite hvorfor. */
+test('innlogging uten nett: knappen kommer tilbake, og brukeren får beskjed', async (t) => {
+  const { w } = lag({ nett: () => new TypeError('Failed to fetch') }, t); // ingen økt lagret
+  const d = w.document;
+  await til(() => portDel(w) === 'portLogin', 'innloggingsskjermen');
+
+  d.getElementById('loginEpost').value = 'ola@hm.no';
+  d.getElementById('loginPassord').value = 'hemmelig';
+  d.getElementById('skjemaLogin').dispatchEvent(new w.Event('submit', { cancelable: true }));
+
+  const knapp = d.querySelector('#skjemaLogin button[type=submit]');
+  await til(() => !knapp.disabled, 'at knappen blir slått på igjen');
+  assert.equal(d.getElementById('loginFeil').hidden, false, 'ingen melding til brukeren');
+  assert.match(d.getElementById('loginFeil').textContent, /Ingen kontakt/);
+});

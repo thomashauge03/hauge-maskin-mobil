@@ -199,14 +199,26 @@ async function medInnlogging(sti, { metode = 'GET', kropp } = {}) {
   }
 }
 
+/* Uten nett kaster fetch. Skjemaene slår av knappen mens de venter, og kastet
+   vi videre, ble den stående slått av uten en eneste melding – akkurat slik
+   det ser ut ute på en jobb uten dekning. Derfor svarer registrer og loggInn
+   alltid med { ok, feil }, aldri med et unntak. */
+const INGEN_KONTAKT = 'Ingen kontakt. Sjekk at du har nett, og prøv igjen.';
+
 /* ---------- Registrering ---------- */
 /* `navn` er ikke valgfritt. Triggeren i navet leser det fra metadataene for
    å lage personen, og hopper over registreringer uten navn – det er slik
    den skiller en appregistrering fra en admin opprettet i Supabase-panelet. */
 async function registrer({ navn, epost, passord }) {
-  const { ok, json } = await navKall('/auth/v1/signup', {
-    kropp: { email: epost, password: passord, data: { navn } }
-  });
+  let svar;
+  try {
+    svar = await navKall('/auth/v1/signup', {
+      kropp: { email: epost, password: passord, data: { navn } }
+    });
+  } catch {
+    return { ok: false, feil: INGEN_KONTAKT };
+  }
+  const { ok, json } = svar;
 
   if (!ok) return { ok: false, feil: lesFeil(json, 'Klarte ikke å opprette kontoen.') };
 
@@ -218,9 +230,15 @@ async function registrer({ navn, epost, passord }) {
 
 /* ---------- Innlogging ---------- */
 async function loggInn(epost, passord) {
-  const { ok, json } = await navKall('/auth/v1/token?grant_type=password', {
-    kropp: { email: epost, password: passord }
-  });
+  let svar;
+  try {
+    svar = await navKall('/auth/v1/token?grant_type=password', {
+      kropp: { email: epost, password: passord }
+    });
+  } catch {
+    return { ok: false, feil: INGEN_KONTAKT };
+  }
+  const { ok, json } = svar;
 
   if (!ok || !json || !json.access_token) {
     return { ok: false, feil: lesFeil(json, 'Klarte ikke å logge inn.') };

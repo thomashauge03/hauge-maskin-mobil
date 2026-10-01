@@ -130,3 +130,23 @@ test('en avvist fornying som svarer etter at en annen har logget inn, kaster ikk
   assert.ok(lager.has('hm-okt'), 'den nye innloggingen ble kastet ut');
   assert.equal(JSON.parse(lager.get('hm-okt')).brukar_id, 'u2');
 });
+
+/* Uten nett kaster fetch. Skjemaet har slått av knappen mens det venter, og
+   kastet vi videre, ble den stående slått av uten en eneste melding. */
+const INGEN_KONTAKT = 'Ingen kontakt. Sjekk at du har nett, og prøv igjen.';
+
+test('innlogging uten nett gir en melding, ikke et unntak', async () => {
+  const { nav, lager } = last(() => new TypeError('Failed to fetch'), null);
+  const svar = await nav.loggInn('ola@hm.no', 'hemmelig');
+  assert.equal(svar.ok, false);
+  assert.equal(svar.feil, INGEN_KONTAKT);
+  assert.ok(!lager.has('hm-okt'));
+});
+
+test('registrering uten nett gir en melding, ikke et unntak', async () => {
+  const { nav, lager } = last(() => new TypeError('Failed to fetch'), null);
+  const svar = await nav.registrer({ navn: 'Ola', epost: 'ola@hm.no', passord: 'hemmelig' });
+  assert.equal(svar.ok, false);
+  assert.equal(svar.feil, INGEN_KONTAKT);
+  assert.ok(!lager.has('hm-okt'));
+});
