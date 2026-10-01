@@ -507,3 +507,19 @@ test('uten nett ved oppstart: den innloggedes lagrede liste blir stående og vis
   assert.equal(portDel(w), null, 'lista kom ikke fram uten nett');
   assert.deepEqual(hmSider(w), ['hm-sider-u1', 'hm-sider-u1-mine']);
 });
+
+/* Motstykket til testen om ugyldig innlogging ved oppstart: betingelsen i
+   opneEllerVis skal holde bakgrunnen unna innloggingsskjermen, men ikke
+   stenge den ute for alle andre. */
+test('vanlig kald start: bakgrunnen startes når lista er framme', async (t) => {
+  const { w, bakgrunn } = lag({
+    film: true,
+    nett: vanligNett({ mine: ['utleie'] }),
+    lager: { 'hm-okt': OKT() }
+  }, t);
+  await ventPaaListe(w);
+  await til(() => bakgrunn.startet > 0, 'at bakgrunnen startes');
+
+  assert.equal(bakgrunn.startet, 1);
+  assert.equal(portDel(w), null);
+});
