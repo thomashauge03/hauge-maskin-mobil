@@ -14,8 +14,9 @@ const GYLDIG = () => ({ access_token: 'a', refresh_token: 'r', gaar_ut: Date.now
 
 /* www/nav.js er et vanlig nettleserskript. Vi gir det lagring og et nett vi
    styrer selv: `svar` bestemmer hva hver adresse svarer. Det kan også vente
-   (async), så et svar kan komme etter at noe annet har skjedd. */
-function last(svar, okt = UTGAATT) {
+   (async), så et svar kan komme etter at noe annet har skjedd. `Dato` lar
+   testen bestemme hva klokka er. */
+function last(svar, okt = UTGAATT, Dato = Date) {
   const lager = new Map();
   if (okt) lager.set('hm-okt', JSON.stringify(okt));
   const localStorage = {
@@ -31,7 +32,7 @@ function last(svar, okt = UTGAATT) {
     return { ok: s.status >= 200 && s.status < 300, status: s.status, json: async () => s.json ?? null };
   };
   const window = {};
-  vm.runInNewContext(KODE, { window, localStorage, fetch, Date, JSON });
+  vm.runInNewContext(KODE, { window, localStorage, fetch, Date: Dato, JSON });
   return { nav: window.HM_NAV, lager, kall };
 }
 
@@ -49,6 +50,29 @@ for (const [hva, feil] of [
     assert.ok(lager.has('hm-okt'), 'økten ble kastet');
   });
 }
+
+/* Et 429 betyr at bøtta for hele kontoret er tom. Hver fornying som prøver
+   igjen med en gang, holder den tom for alle de andre. */
+test('etter 429 ved fornying venter appen et minutt før den prøver igjen', async () => {
+  const klokke = { naa: Date.parse('2026-10-01T07:00:00Z') };
+  class Dato extends Date {
+    static now() { return klokke.naa; }
+  }
+  const { nav, kall } = last((url) => (erFornying(url) ? { status: 429 } : { status: 200, json: [] }), UTGAATT, Dato);
+  const fornyinger = () => kall.filter(erFornying).length;
+
+  assert.equal((await nav.minStatus()).tilstand, 'utanNett');
+  assert.equal(await nav.mineSider(), null);
+  assert.equal(fornyinger(), 1, 'prøvde igjen i samme runde');
+
+  klokke.naa += 59_000;
+  assert.equal(await nav.mineSider(), null);
+  assert.equal(fornyinger(), 1, 'prøvde igjen før det var gått et minutt');
+
+  klokke.naa += 2_000;
+  await nav.mineSider();
+  assert.equal(fornyinger(), 2, 'prøvde aldri igjen');
+});
 
 test('400 ved fornying: innloggingen er ugyldig, og man er logget ut', async () => {
   const { nav, lager } = last((url) =>

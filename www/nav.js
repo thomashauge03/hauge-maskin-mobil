@@ -121,10 +121,18 @@ function erUgyldig(status) {
    ut av at appen spurte om to ting samtidig. */
 let fornyar = null;
 
+/* Etter et 429 prøver vi ikke å fornye på et minutt. Bøtta er felles for
+   alle bak samme IP-adresse, og hver fornying som prøver igjen med en gang,
+   holder den tom for resten av kontoret. Imens er appen uten kontakt, og
+   viser det den har. */
+const PAUSE_ETTER_429_MS = 60_000;
+let pauseTil = 0;
+
 /* { okt } når det gikk. { okt: null, ugyldig: true } når innloggingen er
    ugyldig. { okt: null, ugyldig: false } når navet ikke svarte. */
 async function fornyOkt() {
   if (fornyar) return fornyar;
+  if (Date.now() < pauseTil) return { okt: null, ugyldig: false };
 
   fornyar = (async () => {
     const okt = lesOkt();
@@ -138,6 +146,7 @@ async function fornyOkt() {
     } catch {
       return { okt: null, ugyldig: false };
     }
+    if (svar.status === 429) pauseTil = Date.now() + PAUSE_ETTER_429_MS;
 
     /* Svaret kan komme etter at noen logget ut, eller logget inn som en
        annen. Da er ikke økten vår lenger. Skrev vi det nye tokenet likevel,
