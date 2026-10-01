@@ -488,3 +488,22 @@ test('tilbake i appen innen et minutt gir ingen nye kall, etter et minutt ett se
   await til(() => antallKall(kall, '/rest/v1/mine_sider') === 2, 'at appen henter på nytt etter et minutt');
   assert.equal(antallKall(kall, 'sider.json'), 2);
 });
+
+/* Uten nett ved oppstart bruker appen lista som er lagret. Opprydningen skal
+   ta det som tilhører andre, men aldri den innloggedes egen kopi – den er
+   nettopp det appen har å stå på ute på en jobb uten dekning. */
+test('uten nett ved oppstart: den innloggedes lagrede liste blir stående og vises, andres går', async (t) => {
+  const { w } = lag({
+    nett: () => new TypeError('Failed to fetch'),
+    lager: {
+      'hm-okt': OKT(),
+      'hm-sider-u1': JSON.stringify([SIDER.pages[0]]),
+      'hm-sider-u1-mine': JSON.stringify(['utleie']),
+      'hm-sider-u0': JSON.stringify(SIDER.pages) // en tidligere bruker på samme telefon
+    }
+  }, t);
+  await til(() => navn(w) === 'Utleie', 'den lagrede lista');
+
+  assert.equal(portDel(w), null, 'lista kom ikke fram uten nett');
+  assert.deepEqual(hmSider(w), ['hm-sider-u1', 'hm-sider-u1-mine']);
+});
