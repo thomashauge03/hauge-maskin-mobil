@@ -653,8 +653,8 @@ $('btnOm').addEventListener('click', () => {
     : 'aldri';
   $('omBrukar').textContent = meg || '–';
   $('omTekst').textContent =
-    'Alle systemene til Hauge Maskin samlet på ett sted. Lista blir hentet automatisk, ' +
-    'så nye sider dukker opp av seg selv.';
+    'Systemene du har fått hos Hauge Maskin, samlet på ett sted. Lista blir hentet automatisk, ' +
+    'så sider du får, dukker opp av seg selv.';
   /* Nullstilles hver gang arket åpnes. Et svar fra i går er ikke et svar. */
   $('omSjekk').onclick = sjekkManuelt;
   $('omSjekk').dataset.gaar = '';
