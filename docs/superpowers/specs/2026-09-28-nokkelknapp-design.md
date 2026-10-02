@@ -325,6 +325,9 @@ går først.
      endring der.
    - hm-web-craft ligger på Lovable og kommer først ut når den publiseres derfra,
      som med fullskjermen. smartdok-to-pdf har ingen lukker og står over.
+     *Rettet 02.10.2026:* hm-web-craft lå på Vercel allerede fra 07.09 og fikk
+     nøkkeldelen 02.10. smartdok-to-pdf fikk lukker og nøkkel og ble flyttet
+     til Vercel samme dag. Se `twa/LES-MEG.md`.
    - Sjekk hvert domene:
      `https://digitalassetlinks.googleapis.com/v1/assetlinks:check?source.web.site=https://<domene>&relation=delegate_permission/common.use_as_origin&target.android_app.package_name=no.haugemaskin.mobil&target.android_app.certificate.sha256_fingerprint=94:D0:34:2F:9F:E4:31:9C:D6:A5:C0:4F:96:CE:9D:85:84:54:6F:DE:12:63:36:DC:20:83:9B:28:04:AC:27:70`
      skal gi `"linked": true`.

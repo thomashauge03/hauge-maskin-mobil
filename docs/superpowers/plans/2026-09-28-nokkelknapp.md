@@ -21,6 +21,10 @@
 > (egen gren og uncommitede endringer). De får nøkkeldelen etter oppskriften i
 > `twa/LES-MEG.md` når de er ledige. Varslingskontroll kom inn i lista samme
 > dag og har verken lukkeren eller nøkkeldelen.
+>
+> **02.10.2026:** utleie-app, hm-web-craft, Varslingskontroll og smartdok-to-pdf
+> har fått nøkkeldelen, og alle tolv nettstedene ligger på Vercel. Lista står i
+> `twa/LES-MEG.md`.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
