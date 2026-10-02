@@ -87,7 +87,7 @@ svarte. Slik leses den:
 
 ## Hvilke sider det gjelder
 
-Ni ligger på Vercel, der du eier repoet og bare skal kopiere filen:
+Ti ligger på Vercel, der du eier repoet og bare skal kopiere filen:
 
 | Side | Domene |
 | --- | --- |
@@ -98,25 +98,25 @@ Ni ligger på Vercel, der du eier repoet og bare skal kopiere filen:
 | Tegningsmåler | `tegningsmaler.vercel.app` |
 | Massebergner | `masseberegner.vercel.app` |
 | Delelager | `stock-smart-pi.vercel.app` |
+| Hauge Maskin – hjemmeside | `haugemaskin.vercel.app` |
 | Etikett lager | `etikett.techauge.no` |
 | Qr Kode | `qr.techauge.no` |
 
-Alle ni er lagt inn og verifisert: de svarer `200 application/json`.
+Alle ti er lagt inn og verifisert: de svarer `200 application/json`.
 
-To ligger på Lovable, og de **virker ikke**:
+Én ligger på Lovable, og den **virker ikke**:
 
 | Side | Domene | Status |
 | --- | --- | --- |
-| Hauge Maskin – hjemmeside | `hm-web-craft.lovable.app` | 404 |
 | Smartdok → PDF | `smartdok-to-pdf.lovable.app` | 404 |
 
-Filen er lagt i `public/.well-known/` og pushet til GitHub i begge repoene, men
-nettstedene svarer fortsatt 404. **Lovable deployer ikke fra GitHub-push** –
+Filen er lagt i `public/.well-known/` og pushet til GitHub, men
+nettstedet svarer fortsatt 404. **Lovable deployer ikke fra GitHub-push** –
 repoet er en speiling, ikke kilden. Filen ligger i repoet og kommer aldri ut.
 
 To veier videre, ingen av dem haster: publiser fra Lovables eget
-grensesnitt, eller flytt de to prosjektene til Vercel som de ni andre. Til det
-er gjort, åpner de seg i Custom Tab med adresselinje – altså som før.
+grensesnitt, eller flytt prosjektet til Vercel som de ti andre. Til det
+er gjort, åpner siden seg i Custom Tab med adresselinje – altså som før.
 
 **Tre sider kan aldri få fullskjerm**, og det er riktig at de ikke får det:
 
