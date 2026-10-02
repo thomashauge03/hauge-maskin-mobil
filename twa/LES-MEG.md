@@ -87,7 +87,7 @@ svarte. Slik leses den:
 
 ## Hvilke sider det gjelder
 
-Ti ligger på Vercel, der du eier repoet og bare skal kopiere filen:
+Elleve ligger på Vercel, der du eier repoet og bare skal kopiere filen:
 
 | Side | Domene |
 | --- | --- |
@@ -99,24 +99,24 @@ Ti ligger på Vercel, der du eier repoet og bare skal kopiere filen:
 | Massebergner | `masseberegner.vercel.app` |
 | Delelager | `stock-smart-pi.vercel.app` |
 | Hauge Maskin – hjemmeside | `haugemaskin.vercel.app` |
+| Varslingskontroll | `varslingskontroll.vercel.app` |
 | Etikett lager | `etikett.techauge.no` |
 | Qr Kode | `qr.techauge.no` |
 
-Alle ti er lagt inn og verifisert: de svarer `200 application/json`.
+Alle elleve er lagt inn og verifisert: de svarer `200 application/json` med
+`use_as_origin`, og HM-snutten ligger i HTML-en serveren sender.
 
-Én ligger på Lovable, og den **virker ikke**:
+Én ligger på Lovable:
 
-| Side | Domene | Status |
-| --- | --- | --- |
-| Smartdok → PDF | `smartdok-to-pdf.lovable.app` | 404 |
+| Side | Domene |
+| --- | --- |
+| Smartdok → PDF | `smartdok-to-pdf.lovable.app` |
 
-Filen er lagt i `public/.well-known/` og pushet til GitHub, men
-nettstedet svarer fortsatt 404. **Lovable deployer ikke fra GitHub-push** –
-repoet er en speiling, ikke kilden. Filen ligger i repoet og kommer aldri ut.
-
-To veier videre, ingen av dem haster: publiser fra Lovables eget
-grensesnitt, eller flytt prosjektet til Vercel som de ti andre. Til det
-er gjort, åpner siden seg i Custom Tab med adresselinje – altså som før.
+**Lovable deployer ikke fra GitHub-push** – repoet er en speiling, ikke
+kilden. Det som pushes, kommer først ut når noen publiserer fra Lovables eget
+grensesnitt (Publish → Update). Slik kom `assetlinks.json` ut der. Sjekk
+nettstedet etter hver endring, eller flytt prosjektet til Vercel som de elleve
+andre.
 
 **Tre sider kan aldri få fullskjerm**, og det er riktig at de ikke får det:
 
@@ -138,7 +138,7 @@ To er med:
 ### Om du melder appen inn i Play App Signing
 
 Da signerer Google med **sin egen** nøkkel, og begge fingeravtrykkene over blir
-feil samtidig – på alle elleve nettstedene. Fullskjerm forsvinner stille overalt.
+feil samtidig – på alle tolv nettstedene. Fullskjerm forsvinner stille overalt.
 
 Skjer det, hent SHA-256 fra **Play Console → Release → Setup → App signing →
 App signing key certificate** og legg den til i arrayet. Ikke bytt ut de andre:
@@ -150,7 +150,7 @@ symptomet er bare at adresselinjen blir stående.
 
 ## Oppetidssjekk
 
-Legg alle elleve adressene inn i overvåkingen:
+Legg alle tolv adressene inn i overvåkingen:
 
 ```
 https://<domene>/.well-known/assetlinks.json
