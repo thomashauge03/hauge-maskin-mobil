@@ -1,5 +1,5 @@
 /* Nøkkeldelen av HM-snutten, slik den faktisk limes inn i systemene.
-   Hele twa/hm-snutt.html lastes i jsdom. Lukkeren fjerner seg selv der,
+   Hele twa/hm-snutt.html lastes i jsdom. Lukkeren gjør ingenting der,
    fordi referreren ikke er appens. Kjøres med `npm test`. */
 
 const { test, afterEach } = require('node:test');

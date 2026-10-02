@@ -53,7 +53,9 @@ standard fra nå av:
    serveren sender**. I en Vite-app er det `index.html`. I Next.js er det
    `app/layout.tsx`, som et `<script dangerouslySetInnerHTML>` – ikke i en
    komponent som starter etter hydrering, for da går den første meldingen fra
-   appen tapt.
+   appen tapt. I React-systemene skal `<html>` også ha
+   `suppressHydrationWarning`: lukkeren setter `data-hm-lukkar` på `<html>`
+   før React tar over sida, og rører aldri noe React eier.
 
 Mangler relasjonen, åpner sida seg i fullskjerm som før, bare uten knapp.
 Mangler snutten, skjer det samme. Ingenting går i stykker.
