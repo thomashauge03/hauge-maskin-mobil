@@ -87,7 +87,7 @@ svarte. Slik leses den:
 
 ## Hvilke sider det gjelder
 
-Elleve ligger på Vercel, der du eier repoet og bare skal kopiere filen:
+Alle tolv ligger på Vercel, der du eier repoet og bare skal kopiere filen:
 
 | Side | Domene |
 | --- | --- |
@@ -100,23 +100,15 @@ Elleve ligger på Vercel, der du eier repoet og bare skal kopiere filen:
 | Delelager | `stock-smart-pi.vercel.app` |
 | Hauge Maskin – hjemmeside | `haugemaskin.vercel.app` |
 | Varslingskontroll | `varslingskontroll.vercel.app` |
+| Smartdok → PDF | `smartdok-to-pdf.vercel.app` |
 | Etikett lager | `etikett.techauge.no` |
 | Qr Kode | `qr.techauge.no` |
 
-Alle elleve er lagt inn og verifisert: de svarer `200 application/json` med
+Alle tolv er lagt inn og verifisert: de svarer `200 application/json` med
 `use_as_origin`, og HM-snutten ligger i HTML-en serveren sender.
 
-Én ligger på Lovable:
-
-| Side | Domene |
-| --- | --- |
-| Smartdok → PDF | `smartdok-to-pdf.lovable.app` |
-
-**Lovable deployer ikke fra GitHub-push** – repoet er en speiling, ikke
-kilden. Det som pushes, kommer først ut når noen publiserer fra Lovables eget
-grensesnitt (Publish → Update). Slik kom `assetlinks.json` ut der. Sjekk
-nettstedet etter hver endring, eller flytt prosjektet til Vercel som de elleve
-andre.
+Ingen ligger på Lovable lenger. Hjemmesida og Smartdok → PDF er flyttet
+derfra, og de gamle `lovable.app`-adressene står ikke i sidelista.
 
 **Tre sider kan aldri få fullskjerm**, og det er riktig at de ikke får det:
 
