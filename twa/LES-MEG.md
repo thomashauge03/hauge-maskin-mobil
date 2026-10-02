@@ -69,6 +69,11 @@ Du skal se `"linked": true`.
 Bryteren «Nøkkelknapp» i adminbordet slår knappen av for én side. Den står
 som `"nokkel": false` i `sider.json`; mangler feltet, er knappen på.
 
+Et passordfelt som ikke er innlogging – en nøkkel eller et token – skal ha
+`autocomplete="new-password"`. Da lar snutten det være, slik den gjør med
+registrering og passordbytte. Adminbordet gjør det på systemsidene og under
+Innstillinger, så 🔑 bare kommer på `/logg-inn`.
+
 **Kommer ikke knappen?** I appen (fra 1.16.1): Om → Nøkkel for innlogging →
 «Siste forsøk». Der står hvert steg fra sist et system ble åpnet: hvilken
 Chrome, om Chrome godtok `use_as_origin`, om kanalen åpnet seg, og hva sida
@@ -87,7 +92,7 @@ svarte. Slik leses den:
 
 ## Hvilke sider det gjelder
 
-Alle tolv ligger på Vercel, der du eier repoet og bare skal kopiere filen:
+Alle tretten ligger på Vercel, der du eier repoet og bare skal kopiere filen:
 
 | Side | Domene |
 | --- | --- |
@@ -101,10 +106,11 @@ Alle tolv ligger på Vercel, der du eier repoet og bare skal kopiere filen:
 | Hauge Maskin – hjemmeside | `haugemaskin.vercel.app` |
 | Varslingskontroll | `varslingskontroll.vercel.app` |
 | Smartdok → PDF | `smartdok-to-pdf.vercel.app` |
+| Adminbord | `hauge-maskin-adminbord.vercel.app` |
 | Etikett lager | `etikett.techauge.no` |
 | Qr Kode | `qr.techauge.no` |
 
-Alle tolv er lagt inn og verifisert: de svarer `200 application/json` med
+Alle tretten er lagt inn og verifisert: de svarer `200 application/json` med
 `use_as_origin`, og HM-snutten ligger i HTML-en serveren sender.
 
 Ingen ligger på Lovable lenger. Hjemmesida og Smartdok → PDF er flyttet
@@ -130,7 +136,7 @@ To er med:
 ### Om du melder appen inn i Play App Signing
 
 Da signerer Google med **sin egen** nøkkel, og begge fingeravtrykkene over blir
-feil samtidig – på alle tolv nettstedene. Fullskjerm forsvinner stille overalt.
+feil samtidig – på alle tretten nettstedene. Fullskjerm forsvinner stille overalt.
 
 Skjer det, hent SHA-256 fra **Play Console → Release → Setup → App signing →
 App signing key certificate** og legg den til i arrayet. Ikke bytt ut de andre:
@@ -142,7 +148,7 @@ symptomet er bare at adresselinjen blir stående.
 
 ## Oppetidssjekk
 
-Legg alle tolv adressene inn i overvåkingen:
+Legg alle tretten adressene inn i overvåkingen:
 
 ```
 https://<domene>/.well-known/assetlinks.json
