@@ -94,7 +94,7 @@ svarte. Slik leses den:
 
 ## Hvilke sider det gjelder
 
-Alle tretten ligger på Vercel, der du eier repoet og bare skal kopiere filen:
+Alle fjorten ligger på Vercel, der du eier repoet og bare skal kopiere filen:
 
 | Side | Domene |
 | --- | --- |
@@ -111,8 +111,9 @@ Alle tretten ligger på Vercel, der du eier repoet og bare skal kopiere filen:
 | Adminbord | `hauge-maskin-adminbord.vercel.app` |
 | Etikett lager | `etikett.techauge.no` |
 | Qr Kode | `qr.techauge.no` |
+| Brøyting | `hauge-maskin-broyting.vercel.app` |
 
-Alle tretten er lagt inn og verifisert: de svarer `200 application/json` med
+Alle fjorten er lagt inn og verifisert: de svarer `200 application/json` med
 `use_as_origin`, og HM-snutten ligger i HTML-en serveren sender.
 
 Ingen ligger på Lovable lenger. Hjemmesida og Smartdok → PDF er flyttet
@@ -138,7 +139,7 @@ To er med:
 ### Om du melder appen inn i Play App Signing
 
 Da signerer Google med **sin egen** nøkkel, og begge fingeravtrykkene over blir
-feil samtidig – på alle tretten nettstedene. Fullskjerm forsvinner stille overalt.
+feil samtidig – på alle fjorten nettstedene. Fullskjerm forsvinner stille overalt.
 
 Skjer det, hent SHA-256 fra **Play Console → Release → Setup → App signing →
 App signing key certificate** og legg den til i arrayet. Ikke bytt ut de andre:
@@ -150,7 +151,7 @@ symptomet er bare at adresselinjen blir stående.
 
 ## Oppetidssjekk
 
-Legg alle tretten adressene inn i overvåkingen:
+Legg alle fjorten adressene inn i overvåkingen:
 
 ```
 https://<domene>/.well-known/assetlinks.json
