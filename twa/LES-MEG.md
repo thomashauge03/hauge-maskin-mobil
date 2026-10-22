@@ -48,8 +48,8 @@ standard fra nå av:
 1. **`assetlinks.json` med `use_as_origin`.** Relasjonen lar appen åpne en
    meldingskanal til sida. Fila i denne mappen har den allerede – kopier den
    som før.
-2. **HM-snutten.** [`hm-snutt.html`](hm-snutt.html) har to deler: lukkeren og
-   nøkkelknappen. Begge limes inn øverst i `<body>`, **inline i HTML-en
+2. **HM-snutten.** [`hm-snutt.html`](hm-snutt.html) har tre deler: lukkeren,
+   nøkkelknappen og [hjem-logoen](#hjem-logoen). Alle limes inn øverst i `<body>`, **inline i HTML-en
    serveren sender**. I en Vite-app er det `index.html`. I Next.js er det
    `app/layout.tsx`, som et `<script dangerouslySetInnerHTML>` – ikke i en
    komponent som starter etter hydrering, for da går den første meldingen fra
@@ -91,6 +91,23 @@ svarte. Slik leses den:
   samlet da den våknet. «kom fram … senere (appen sov?)» sier det samme.
 - **«Appen startet» rett etter «Sida er sendt til Chrome»:** Android avsluttet
   appen mens Chrome lå foran, og kanalen døde med den.
+
+## Hjem-logoen
+
+Åpnet fra appen tar HM-logoen oppe til venstre deg tilbake til lista i
+appen. På PC og i en vanlig nettleser gjør logoen det den alltid har gjort.
+
+- Snutten kjenner igjen et bilde eller en svg oppe til venstre der alt, src,
+  klasse eller lenka rundt sier *logo*, *hauge* eller *hm*. Finner den ikke
+  logoen i et system, sett `data-hm-hjem` på den.
+- Logoen sender `intent://hjem#Intent;scheme=no.haugemaskin.mobil;package=no.haugemaskin.mobil;…`.
+  Appen svarer fra 1.18.0. Med en eldre app sender Chrome deg dit logoen
+  pekte før.
+- I React-systemene er det komponenten `Hjemlogo`, rett etter
+  `<Nokkelknapp />`. Brøyting har hele snutten som streng i `hm-snutt.ts`.
+- Varslingskontroll har ingen logo og QR-admin bare et QR-ikon, så der
+  skjer ingenting. Etikett har Techauge-logoen oppe til venstre, og den
+  virker som HM-logoen.
 
 ## Hvilke sider det gjelder
 

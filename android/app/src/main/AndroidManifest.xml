@@ -20,6 +20,18 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- HM-logoen i systemene: snutten sender
+                 intent://hjem#Intent;scheme=no.haugemaskin.mobil;package=no.haugemaskin.mobil;…
+                 Chrome godtar bare en side-adresse som når en BROWSABLE-aktivitet,
+                 derfor dette filteret og ikke LAUNCHER. singleTask gjør resten:
+                 systemet som lå over lista blir lukket, og lista kommer fram.
+                 Hvem som helst kan sende den – det eneste den gjør, er å åpne appen. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="no.haugemaskin.mobil" android:host="hjem" />
+            </intent-filter>
         </activity>
 
         <provider
