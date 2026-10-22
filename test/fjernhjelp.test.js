@@ -84,6 +84,16 @@ test('Få hjelp ligger under Om, og åpner sitt eget ark', async (t) => {
   assert.equal($('hjelpArk').hidden, true);
 });
 
+test('øverst i arket står Thomas, og et trykk ringer ham', async (t) => {
+  const { $ } = await lag({}, t);
+  await opneHjelp($);
+  const kort = $('hjelpKontakt');
+  assert.equal(kort.getAttribute('href'), 'tel:+4741348333');
+  assert.match(kort.textContent, /Thomas Hauge/);
+  assert.match(kort.textContent, /413 48 333/);
+  assert.ok(kort.compareDocumentPosition($('hjelpAndroid')) & 4, 'kontakten skal stå før forklaringene');
+});
+
 test('Android ser RustDesk, ikke FaceTime', async (t) => {
   const { $ } = await lag({ agent: ANDROID }, t);
   await opneHjelp($);

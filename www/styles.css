@@ -206,6 +206,19 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
   text-transform: uppercase; color: var(--raud);
 }
 .ark-hjelp { font-size: 14.5px; line-height: 1.55; color: #c9c9d3; margin: 0 0 16px; }
+.hjelp-kontakt {
+  display: flex; align-items: center; gap: 12px; margin: 0 0 18px;
+  padding: 14px 16px; border-radius: 14px; background: var(--botn-3);
+  color: var(--tekst); text-decoration: none;
+}
+.hjelp-kontakt:active { opacity: .8; }
+.hjelp-kontakt-tekst { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.hjelp-kontakt-tekst strong { font-size: 16px; }
+.hjelp-kontakt-tekst span { font-size: 15px; color: #c9c9d3; letter-spacing: .02em; }
+.hjelp-kontakt-ring {
+  padding: 9px 16px; border-radius: 999px; background: var(--raud);
+  color: #fff; font-weight: 700; font-size: 14px;
+}
 .hjelp-steg { margin: 0 0 16px; padding-left: 22px; font-size: 14.5px; line-height: 1.6; color: #c9c9d3; }
 .hjelp-steg li + li { margin-top: 6px; }
 .hjelp-merk { font-size: 13px; line-height: 1.5; color: var(--dempa); margin: 18px 0 4px; }
