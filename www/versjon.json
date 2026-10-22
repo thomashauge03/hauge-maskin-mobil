@@ -1,7 +1,7 @@
 {
   "_om": "Nyeste versjon av mobilappen. Appen sjekker denne fila ved oppstart og når den kommer fram igjen, høyst én gang i minuttet. Er \"minimum\" nyere enn versjonen på telefonen, dekker en skjerm hele appen til den nye er installert. Ellers får du bare et rødt felt du kan trykke bort. APK-en MÅ ligge på GitHub før denne fila blir pushet – ellers står alle foran en nedlastingsknapp som gir 404.",
-  "versjon": "1.19.1",
+  "versjon": "1.19.2",
   "minimum": "1.17.0",
-  "apk": "https://github.com/thomashauge03/hauge-maskin-mobil/releases/latest/download/Hauge-Maskin-1.19.1.apk",
-  "endringar": "Få hjelp på skjermen under Om: ring Thomas rett fra appen når du står fast, og få hjelp på skjermen."
+  "apk": "https://github.com/thomashauge03/hauge-maskin-mobil/releases/latest/download/Hauge-Maskin-1.19.2.apk",
+  "endringar": "Ny rød knapp øverst til høyre: Få hjelp. Ring Thomas rett fra appen, og få hjelp på skjermen."
 }
