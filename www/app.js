@@ -4,7 +4,7 @@
 
 const SIDER_URL =
   'https://raw.githubusercontent.com/thomashauge03/hauge-maskin-app/main/sider.json';
-const VERSJON = '1.19.1';
+const VERSJON = '1.19.2';
 
 /* Den lagrede lista hører til én bruker, ikke til telefonen.
    Logger Ola ut og Kari inn på samme telefon, ville Kari sett Olas liste
@@ -740,6 +740,7 @@ async function lastNedRustdesk() {
 }
 
 $('omHjelp').addEventListener('click', visHjelpArk);
+$('btnHjelp').addEventListener('click', visHjelpArk);
 $('hjelpRustdesk').addEventListener('click', lastNedRustdesk);
 $('hjelpLukk').addEventListener('click', () => { $('hjelpArk').hidden = true; });
 $('hjelpArk').addEventListener('click', (e) => { if (e.target === $('hjelpArk')) $('hjelpArk').hidden = true; });

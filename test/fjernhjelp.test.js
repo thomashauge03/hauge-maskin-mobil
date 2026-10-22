@@ -84,6 +84,15 @@ test('Få hjelp ligger under Om, og åpner sitt eget ark', async (t) => {
   assert.equal($('hjelpArk').hidden, true);
 });
 
+test('Få hjelp står helt til høyre i toppen, og åpner arket direkte', async (t) => {
+  const { w, $ } = await lag({}, t);
+  const knapper = [...w.document.querySelectorAll('header.topp button')];
+  assert.equal(knapper.at(-1), $('btnHjelp'), 'skal være siste knapp i toppen');
+  assert.match($('btnHjelp').textContent, /Få hjelp/);
+  $('btnHjelp').click();
+  assert.equal($('hjelpArk').hidden, false);
+});
+
 test('øverst i arket står Thomas, og et trykk ringer ham', async (t) => {
   const { $ } = await lag({}, t);
   await opneHjelp($);

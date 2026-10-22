@@ -56,6 +56,15 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .ikonknapp:active { background: #ffffff1a; color: #fff; }
 .ikonknapp svg { width: 19px; height: 19px; }
 .ikonknapp.gaar svg { animation: snurr 1s linear infinite; }
+/* Rød og med tekst, så den som står fast finner den uten å lete under Om */
+.hjelpknapp {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 36px; padding: 0 12px; border-radius: 3px;
+  background: var(--raud); color: #fff;
+  font-size: 13px; font-weight: 800; white-space: nowrap;
+}
+.hjelpknapp:active { opacity: .85; }
+.hjelpknapp svg { width: 16px; height: 16px; }
 @keyframes snurr { to { transform: rotate(360deg); } }
 
 /* ---------- Melding om ny versjon ---------- */
