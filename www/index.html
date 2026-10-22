@@ -197,6 +197,9 @@
       <button class="om-rad om-knapp" id="omSjekk">
         <span>Se etter oppdateringer</span><b id="omSjekkSvar">Sjekk →</b>
       </button>
+      <button class="om-rad om-knapp" id="omHjelp">
+        <span>Få hjelp på skjermen</span><b>Vis →</b>
+      </button>
       <button class="om-rad om-knapp" id="omNokkel" hidden>
         <span>Nøkkel for innlogging</span><b id="omNokkelSvar">–</b>
       </button>
@@ -208,6 +211,43 @@
       <div class="om-rad"><span>Innlogget som</span><b id="omBrukar">–</b></div>
       <button id="omLukk" class="knapp knapp-stor">Lukk</button>
       <button id="omLoggUt" class="tekstknapp midtstilt">Logg ut</button>
+    </div>
+  </div>
+
+  <!-- Få hjelp på skjermen. Gratis på begge: RustDesk på Android, FaceTime
+       på iPhone, der Apple ikke lar noen annen app styre telefonen.
+       Telefonen ser bare sin egen del. Se visHjelpArk i app.js. -->
+  <div id="hjelpArk" class="ark-bakgrunn" hidden>
+    <div class="ark">
+      <div class="ark-drag"></div>
+      <h2>Få hjelp på skjermen</h2>
+      <section id="hjelpAndroid">
+        <p class="ark-hjelp">
+          Vi bruker RustDesk. Det er gratis, og du laster det ned første gang.
+        </p>
+        <ol class="hjelp-steg">
+          <li>Trykk <b>Last ned RustDesk</b> og installer fila.</li>
+          <li>Åpne RustDesk, gå til <b>Del skjerm</b> og trykk <b>Start</b>.</li>
+          <li>Les opp ID og passord til den som hjelper deg, og godta det telefonen spør om.</li>
+        </ol>
+        <button id="hjelpRustdesk" class="knapp knapp-stor">Last ned RustDesk</button>
+      </section>
+      <section id="hjelpIphone">
+        <p class="ark-hjelp">
+          På iPhone bruker vi FaceTime. Begge må ha iOS 18 eller nyere, og den
+          som hjelper deg må ligge i kontaktene dine.
+        </p>
+        <ol class="hjelp-steg">
+          <li>Ring den som skal hjelpe deg på FaceTime.</li>
+          <li>Trykk på deleknappen og velg <b>Del skjermen min</b>.</li>
+          <li>Ber de om å styre telefonen, trykker du <b>Tillat</b>.</li>
+        </ol>
+      </section>
+      <p class="hjelp-merk">
+        Du ser alt som skjer, og avslutter når du vil. Gi aldri skjermen til
+        noen som ringer deg uoppfordret.
+      </p>
+      <button id="hjelpLukk" class="tekstknapp midtstilt">Lukk</button>
     </div>
   </div>
 

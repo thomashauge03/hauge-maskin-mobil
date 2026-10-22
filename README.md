@@ -64,6 +64,12 @@ Samme adresse fungerer også på Android om du ikke vil installere APK-en.
   minuttet.
 - Du blir ikke logget ut når navet er travelt eller nede – bare når
   innloggingen faktisk er ugyldig. Da vises den lagrede lista.
+- **Om → Få hjelp på skjermen** lar noen hos Hauge Maskin se og styre
+  telefonen, gratis. Android bruker RustDesk: knappen henter nyeste
+  64-bitsfil rett fra RustDesk sin GitHub, siden RustDesk ikke ligger i Play
+  Butikk. Den som hjelper, trenger RustDesk på PC-en. iPhone bruker
+  skjermdeling i FaceTime, der begge må ha iOS 18 eller nyere. Ingen annen app
+  får lov til å styre en iPhone.
 
 ## Hvorfor systemene åpner seg i nettleseren
 

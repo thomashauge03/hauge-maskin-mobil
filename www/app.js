@@ -4,7 +4,7 @@
 
 const SIDER_URL =
   'https://raw.githubusercontent.com/thomashauge03/hauge-maskin-app/main/sider.json';
-const VERSJON = '1.18.0';
+const VERSJON = '1.19.0';
 
 /* Den lagrede lista hører til én bruker, ikke til telefonen.
    Logger Ola ut og Kari inn på samme telefon, ville Kari sett Olas liste
@@ -700,6 +700,50 @@ $('btnOm').addEventListener('click', () => {
 $('omLukk').addEventListener('click', () => { $('om').hidden = true; });
 $('om').addEventListener('click', (e) => { if (e.target === $('om')) $('om').hidden = true; });
 
+/* ---------- Få hjelp på skjermen ----------
+   Gratis på begge: RustDesk på Android, FaceTime på iPhone. RustDesk ligger
+   ikke i Play Butikk, så vi henter fila fra RustDesk sin egen GitHub – den
+   for 64-bits telefoner, som er nesten alle. Svarer ikke GitHub, eller peker
+   svaret et annet sted, får de utgivelsessiden og velger selv. */
+const RUSTDESK_SIST = 'https://api.github.com/repos/rustdesk/rustdesk/releases/latest';
+const RUSTDESK_SIDE = 'https://github.com/rustdesk/rustdesk/releases/latest';
+const RUSTDESK_FIL = /^https:\/\/github\.com\/rustdesk\/rustdesk\/releases\/download\/[^/]+\/rustdesk-[\d.]+-aarch64-signed\.apk$/;
+
+const erIphone = () =>
+  /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+  // iPad later som den er en Mac, men har berøringsskjerm
+  (/macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+
+function visHjelpArk() {
+  // I en vanlig nettleser på PC vet vi ikke hvilken telefon det gjelder: vis begge
+  $('hjelpAndroid').hidden = erIphone();
+  $('hjelpIphone').hidden = erAndroid();
+  $('om').hidden = true;
+  $('hjelpArk').hidden = false;
+}
+
+async function lastNedRustdesk() {
+  const knapp = $('hjelpRustdesk');
+  knapp.disabled = true;
+  let url = RUSTDESK_SIDE;
+  try {
+    const res = await fetch(RUSTDESK_SIST, { cache: 'no-store' });
+    if (res.ok) {
+      const fil = ((await res.json()).assets || [])
+        .map((a) => a.browser_download_url)
+        .find((u) => RUSTDESK_FIL.test(u || ''));
+      if (fil) url = fil;
+    }
+  } catch { /* da får de utgivelsessiden */ }
+  knapp.disabled = false;
+  opneNedlasting(url);
+}
+
+$('omHjelp').addEventListener('click', visHjelpArk);
+$('hjelpRustdesk').addEventListener('click', lastNedRustdesk);
+$('hjelpLukk').addEventListener('click', () => { $('hjelpArk').hidden = true; });
+$('hjelpArk').addEventListener('click', (e) => { if (e.target === $('hjelpArk')) $('hjelpArk').hidden = true; });
+
 /* ---------- Nøkkelen ----------
    Én felles innlogging som 🔑-knappen i systemene fyller inn. Passordet kan
    skrives inn her, men aldri leses tilbake – se nokkel.js. */
@@ -882,13 +926,13 @@ function startBakgrunn() {
        satt bakgrunnen i gang igjen bak filmen første gang noe annet rørte
        seg – og da tegner vi noe ingen ser. */
     bakgrunn.pause(
-      !$('ark').hidden || !$('om').hidden || !$('nokkelArk').hidden ||
+      !$('ark').hidden || !$('om').hidden || !$('nokkelArk').hidden || !$('hjelpArk').hidden ||
       !$('port').hidden || !$('paabudt').hidden ||
       !!document.querySelector('.lastar')
     );
   };
   const vakt = new MutationObserver(sjaa);
-  for (const id of ['ark', 'om', 'nokkelArk', 'port', 'paabudt']) {
+  for (const id of ['ark', 'om', 'nokkelArk', 'hjelpArk', 'port', 'paabudt']) {
     vakt.observe($(id), { attributes: true, attributeFilter: ['hidden'] });
   }
   sjaa();
@@ -1018,6 +1062,7 @@ async function loggUtOgTilbake() {
      kontekst gående bak innloggingsskjermen. */
   stoppBakgrunn();
   $('om').hidden = true;
+  $('hjelpArk').hidden = true;
   /* Neste person på telefonen skal ikke arve noe fra den forrige. Utloggingen
      kommer også av seg selv, mens et detaljark står åpent eller noe er skrevet
      i søkefeltet – og arket viser en side den neste kanskje ikke har fått.

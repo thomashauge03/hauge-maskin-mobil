@@ -206,6 +206,9 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
   text-transform: uppercase; color: var(--raud);
 }
 .ark-hjelp { font-size: 14.5px; line-height: 1.55; color: #c9c9d3; margin: 0 0 16px; }
+.hjelp-steg { margin: 0 0 16px; padding-left: 22px; font-size: 14.5px; line-height: 1.6; color: #c9c9d3; }
+.hjelp-steg li + li { margin-top: 6px; }
+.hjelp-merk { font-size: 13px; line-height: 1.5; color: var(--dempa); margin: 18px 0 4px; }
 .ark-adresse {
   font-size: 12px; color: #5c5c68; background: var(--botn-3);
   border: 1px solid var(--strek); border-radius: 10px;
