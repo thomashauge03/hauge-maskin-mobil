@@ -129,7 +129,7 @@ Alle femten ligger på Vercel, der du eier repoet og bare skal kopiere filen:
 | Etikett lager | `etikett.techauge.no` |
 | Qr Kode | `qr.techauge.no` |
 | Brøyting | `hauge-maskin-broyting.vercel.app` |
-| Internbelastning | `hauge-maskin-internbelastning.vercel.app` |
+| Økonomi | `hauge-maskin-internbelastning.vercel.app` |
 
 Alle femten er lagt inn og verifisert: de svarer `200 application/json` med
 `use_as_origin`, og HM-snutten ligger i HTML-en serveren sender.
